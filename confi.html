@@ -134,6 +134,7 @@
                       <div class="settings-actions"><button class="primary-button" type="submit">Guardar logo</button><button class="secondary-button" type="button" id="resetLogoButton">Restaurar logo original</button></div>
                     </form>
                     <small class="settings-help">Para Drive, usa el enlace de compartir del archivo y verifica que tenga permiso de visualización.</small>
+                    <div class="connection-badge" id="firebaseStatus">Conectando con Firebase de pruebas…</div>
                   </article>
                   <article class="data-card glass-panel logo-preview-card"><span class="eyebrow">VISTA PREVIA</span><div class="logo-preview"><img src="assets/logo-altosfilm.png" alt="Vista previa del logo" data-brand-logo id="logoPreview" /></div><strong id="logoStatus">Logo original</strong><small>La configuración se guardará de forma local en esta versión y después se sincronizará con Firebase.</small></article>
                 </div>
@@ -146,6 +147,8 @@
 
     <div class="modal-backdrop" id="leadModal" aria-hidden="true"><div class="modal glass-panel"><button class="modal-close" data-close-modal>×</button><span class="eyebrow">CAPTACIÓN DE INTERESADOS</span><h3>Quiero información</h3><p>Déjanos tus datos y un asesor dará seguimiento a tu interés.</p><form id="leadForm"><label>Nombre<input name="name" required placeholder="Tu nombre" /></label><label>Teléfono<input name="phone" required placeholder="10 dígitos" /></label><label>Propiedad de interés<select name="property"><option>Casa Encino</option><option>Terreno Los Olivos</option><option>Casa Centro</option></select></label><label>Mensaje<textarea name="message" rows="3" placeholder="¿Qué te gustaría conocer?"></textarea></label><label class="consent"><input type="checkbox" required /> Acepto que la inmobiliaria me contacte.</label><button class="primary-button" type="submit">Enviar interés</button></form></div></div>
     <div class="toast" id="toast" role="status"></div>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="config/firebase-config.js"></script>
     <script src="src/js/app.js"></script>
   </body>

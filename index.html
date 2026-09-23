@@ -129,6 +129,8 @@
 
     <div class="modal-backdrop" id="leadModal" aria-hidden="true"><div class="modal glass-panel"><button class="modal-close" data-close-modal>×</button><span class="eyebrow">CAPTACIÓN DE INTERESADOS</span><h3>Quiero información</h3><p>Déjanos tus datos y un asesor dará seguimiento a tu interés.</p><form id="leadForm"><label>Nombre<input name="name" required placeholder="Tu nombre" /></label><label>Teléfono<input name="phone" required placeholder="10 dígitos" /></label><label>Propiedad de interés<select name="property"><option>Casa Encino</option><option>Terreno Los Olivos</option><option>Casa Centro</option></select></label><label>Mensaje<textarea name="message" rows="3" placeholder="¿Qué te gustaría conocer?"></textarea></label><label class="consent"><input type="checkbox" required /> Acepto que la inmobiliaria me contacte.</label><button class="primary-button" type="submit">Enviar interés</button></form></div></div>
     <div class="toast" id="toast" role="status"></div>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="config/firebase-config.js"></script>
     <script src="src/js/app.js"></script>
   </body>

@@ -1,0 +1,97 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userExists() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isStaff() {
+      return userExists()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+          in ['admin', 'direccion', 'asesor', 'cobranza', 'consulta'];
+    }
+
+    function isAdmin() {
+      return userExists()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function validPublicLead() {
+      return request.resource.data.keys().hasOnly([
+          'name', 'phone', 'email', 'message', 'propertyId', 'propertyName',
+          'source', 'status', 'createdAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() >= 7
+        && request.resource.data.phone.size() <= 25
+        && request.resource.data.propertyName is string
+        && request.resource.data.source == 'portal'
+        && request.resource.data.status == 'nuevo'
+        && request.resource.data.createdAt is timestamp;
+    }
+
+    // Catálogo público: solo propiedades expresamente publicadas.
+    match /publicProperties/{propertyId} {
+      allow read: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    // Captación pública: se permite crear un interés, pero no leerlo ni modificarlo.
+    match /publicLeads/{leadId} {
+      allow create: if validPublicLead();
+      allow read, update, delete: if isStaff();
+    }
+
+    // Usuarios y roles: únicamente dirección puede administrar permisos.
+    match /users/{userId} {
+      allow read: if isStaff() && (request.auth.uid == userId || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /properties/{propertyId} {
+      allow read, write: if isStaff();
+    }
+
+    match /clients/{clientId} {
+      allow read, write: if isStaff();
+    }
+
+    match /leads/{leadId} {
+      allow read, write: if isStaff();
+    }
+
+    match /operations/{operationId} {
+      allow read, write: if isStaff();
+    }
+
+    match /collections/{collectionId} {
+      allow read, write: if isStaff();
+    }
+
+    match /documents/{documentId} {
+      allow read, write: if isStaff();
+    }
+
+    match /zones/{zoneId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

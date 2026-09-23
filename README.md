@@ -15,13 +15,15 @@ Base modular del proyecto para Altos Film. No es un único `index.html`: `index.
 
 La V1 incluye ocho propiedades demostrativas de Tepatitlán y Los Altos. Sus imágenes son referencias públicas de demostración y cada registro tiene un campo `imageUrl` que puede recibir una URL directa o un enlace compartido de Google Drive. Antes de publicar el catálogo real se reemplazarán por imágenes autorizadas de la inmobiliaria.
 
+La conexión actual utiliza el proyecto Firebase `quiniela-mundial-417fa` exclusivamente como ambiente de pruebas. La configuración está aislada en `config/firebase-config.js` para poder sustituirla por la base oficial al finalizar el desarrollo.
+
 ## Ejecutar localmente
 
 Abre `index.html` en un navegador moderno o sírvelo desde un servidor web local. La V1 no necesita compilación.
 
 ## Firebase
 
-Edita `config/firebase-config.js` con las credenciales del proyecto Firebase. La conexión real, reglas de Firestore, autenticación y Storage se incorporarán en la siguiente iteración funcional.
+La V1 inicializa Firebase y Firestore con el proyecto de pruebas. Las reglas de Firestore, autenticación, Storage y persistencia de módulos se incorporarán en las siguientes iteraciones funcionales.
 
 ## Datos de contacto
 

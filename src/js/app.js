@@ -16,6 +16,25 @@ const toast = document.querySelector("#toast");
 const defaultLogoUrl = "assets/logo-altosfilm.png";
 const logoStorageKey = "rpm.logoUrl";
 
+function initializeFirebaseTestConnection() {
+  const status = document.querySelector("#firebaseStatus");
+  if (!window.firebase || !window.RPM_FIREBASE_CONFIG || window.RPM_FIREBASE_CONFIG.apiKey.startsWith("REEMPLAZAR")) {
+    if (status) status.textContent = "Firebase pendiente de configuración";
+    return;
+  }
+  try {
+    const app = window.firebase.apps.length ? window.firebase.app() : window.firebase.initializeApp(window.RPM_FIREBASE_CONFIG);
+    window.rpmFirebaseApp = app;
+    window.rpmDb = window.firebase.firestore(app);
+    window.RPM_FIREBASE_READY = true;
+    if (status) status.textContent = `Firebase de pruebas conectado · ${window.RPM_FIREBASE_CONFIG.projectId}`;
+  } catch (error) {
+    window.RPM_FIREBASE_READY = false;
+    if (status) status.textContent = "No se pudo conectar con Firebase de pruebas";
+    console.error("Firebase initialization error", error);
+  }
+}
+
 function renderProperties() {
   const query = searchInput.value.toLowerCase().trim();
   const type = typeSelect.value;
@@ -143,5 +162,6 @@ if (logoSettingsForm) {
 }
 searchInput.addEventListener("input", renderProperties);
 typeSelect.addEventListener("change", renderProperties);
+initializeFirebaseTestConnection();
 applySavedLogo();
 renderProperties();
