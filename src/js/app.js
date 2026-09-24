@@ -259,6 +259,7 @@ function renderDevelopments() {
   const publicGrid = document.querySelector("#publicDevelopmentsGrid");
   const rpmGrid = document.querySelector("#rpmDevelopmentsGrid");
   const active = developments.filter((development) => development.active !== false);
+  renderDevelopmentDashboard(active);
   if (publicGrid) {
     const published = active.filter((development) => development.published);
     publicGrid.innerHTML = published.map((development) => renderDevelopmentCard(development, "public")).join("") || `<div class="empty-state glass-panel"><h3>Próximamente</h3><p>Estamos preparando nuevos desarrollos inmobiliarios.</p></div>`;
@@ -268,6 +269,20 @@ function renderDevelopments() {
   document.querySelectorAll(".edit-development").forEach((button) => button.addEventListener("click", () => openDevelopmentModal(button.dataset.id)));
   document.querySelectorAll(".toggle-development").forEach((button) => button.addEventListener("click", () => toggleDevelopment(button.dataset.id)));
   document.querySelectorAll(".delete-development").forEach((button) => button.addEventListener("click", () => deleteDevelopment(button.dataset.id)));
+}
+
+function renderDevelopmentDashboard(activeDevelopments = developments.filter((development) => development.active !== false)) {
+  const stats = document.querySelector("#developmentDashboardStats");
+  const list = document.querySelector("#developmentDashboardList");
+  if (!stats && !list) return;
+  const published = activeDevelopments.filter((development) => development.published).length;
+  const drafts = activeDevelopments.length - published;
+  if (stats) stats.innerHTML = `<div><strong>${activeDevelopments.length}</strong><span>Total de proyectos</span></div><div><strong>${published}</strong><span>Publicados</span></div><div><strong>${drafts}</strong><span>Borradores</span></div>`;
+  if (list) list.innerHTML = activeDevelopments.slice(0, 4).map((development) => `<div class="dashboard-project-row"><div><strong>${escapeHtml(development.name)}</strong><small>${escapeHtml(development.city || "Ubicación pendiente")} · ${escapeHtml(development.type || "Desarrollo")}</small></div><span class="tag ${development.published ? "green" : "orange"}">${development.published ? "Publicado" : "Borrador"}</span><button class="text-button dashboard-edit-development" data-id="${escapeHtml(development.id)}">Editar</button></div>`).join("") || `<div class="empty-state"><h3>Sin desarrollos registrados</h3><p>Crea el primer proyecto desde el botón de administración.</p></div>`;
+  document.querySelectorAll(".dashboard-edit-development").forEach((button) => button.addEventListener("click", () => {
+    document.querySelector('[data-panel="developmentManagerPanel"]')?.click();
+    openDevelopmentModal(button.dataset.id);
+  }));
 }
 
 async function loadDevelopments() {
@@ -332,7 +347,17 @@ async function saveDemoDevelopment(developmentId) {
   const { id, demo, ...record } = development;
   record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
   record.updatedAt = window.firebase.firestore.FieldValue.serverTimestamp();
-  try { await window.rpmDb.collection("developments").add(record); await loadDevelopments(); showToast("TERRASER quedó guardado en Firebase."); } catch (error) { showToast("No se pudo guardar TERRASER en Firebase."); console.error(error); }
+  try {
+    await window.rpmDb.collection("developments").doc("terraser-demo").set(record, { merge: true });
+    await loadDevelopments();
+    showToast("TERRASER quedó guardado en Firebase.");
+  } catch (error) {
+    const message = error?.code === "permission-denied"
+      ? "Firebase rechazó el guardado. Publica las reglas de Firestore V3.2."
+      : "No se pudo guardar TERRASER. Revisa la conexión con Firebase.";
+    showToast(message);
+    console.error("Development demo save error", error);
+  }
 }
 
 async function toggleDevelopment(developmentId) {
@@ -520,6 +545,7 @@ if (newDevelopmentButton) newDevelopmentButton.addEventListener("click", () => o
 document.querySelectorAll("[data-close-development-modal]").forEach((button) => button.addEventListener("click", closeDevelopmentModal));
 document.querySelector("#developmentModal")?.addEventListener("click", (event) => { if (event.target.id === "developmentModal") closeDevelopmentModal(); });
 document.querySelector("#developmentForm")?.addEventListener("submit", saveDevelopment);
+document.querySelector("#goDevelopmentManager")?.addEventListener("click", () => document.querySelector('[data-panel="developmentManagerPanel"]')?.click());
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
 document.querySelector("#leadModal").addEventListener("click", (event) => { if (event.target.id === "leadModal") closeModal(); });
