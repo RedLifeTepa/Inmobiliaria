@@ -85,6 +85,13 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
+    // Desarrollos: el RPM administra todo; el catálogo solo ve desarrollos publicados y activos.
+    match /developments/{developmentId} {
+      allow read: if (signedIn() && isStaff())
+        || (!signedIn() && resource.data.published == true && resource.data.active == true);
+      allow create, update, delete: if isStaff();
+    }
+
     match /settings/{settingId} {
       allow read: if isStaff();
       allow write: if isAdmin();

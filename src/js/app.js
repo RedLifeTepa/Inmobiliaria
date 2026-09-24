@@ -9,6 +9,25 @@ let properties = [
   { id: "RPM-1008", name: "Lote Vista Norte", type: "Terreno", zone: "Vista Hermosa, Tepatitlán", price: "$1,050,000", meta: "360 m² · vista panorámica", status: "Apartado", imageUrl: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80" },
 ];
 
+const demoDevelopment = {
+  id: "demo-terraser",
+  name: "TERRASER Residencias & Hotel",
+  type: "Mixto",
+  city: "Tepatitlán",
+  location: "Tepatitlán, Jalisco",
+  price: "$1,200,000",
+  units: 10,
+  suites: 24,
+  amenitiesCount: 17,
+  coverUrl: "assets/terraser-cover.png",
+  description: "Desarrollo con residencias de lujo, suites de hotel, plaza comercial, restaurantes y amenidades para residentes e inversionistas.",
+  amenities: ["Sky bar", "Piscina", "Restaurante", "Plaza comercial", "Conserjería 24/7", "Seguridad 24/7"],
+  published: true,
+  active: true,
+  demo: true,
+};
+let developments = [demoDevelopment];
+
 const propertyGrid = document.querySelector("#propertyGrid");
 const searchInput = document.querySelector("#propertySearch");
 const typeSelect = document.querySelector("#propertyType");
@@ -163,6 +182,7 @@ function initializeRpmAuth() {
       sessionStatus.textContent = `Sesión activa · ${role}`;
       errorBox.textContent = "";
       await loadRpmProperties();
+      await loadDevelopments();
       gate.classList.remove("open");
       gate.setAttribute("aria-hidden", "true");
       document.body.classList.remove("rpm-locked");
@@ -226,6 +246,104 @@ function renderRpmProperties() {
     </tr>`).join("") : `<tr><td colspan="6"><div class="empty-state"><h3>No hay propiedades con esos filtros</h3><p>Registra un inmueble nuevo o modifica la búsqueda.</p></div></td></tr>`;
   body.querySelectorAll(".edit-property").forEach((button) => button.addEventListener("click", () => openPropertyModal(button.dataset.id)));
   body.querySelectorAll(".delete-property").forEach((button) => button.addEventListener("click", () => deleteProperty(button.dataset.id)));
+}
+
+function renderDevelopmentCard(development, mode) {
+  const cover = normalizeImageUrl(development.coverUrl) || "assets/terraser-cover.png";
+  const amenities = Array.isArray(development.amenities) ? development.amenities : String(development.amenities || "").split(",").map((item) => item.trim()).filter(Boolean);
+  const actions = mode === "rpm" ? `<div class="development-actions">${development.demo ? `<button class="secondary-button save-demo-development" data-id="${escapeHtml(development.id)}">Guardar en Firebase</button>` : `<button class="text-button edit-development" data-id="${escapeHtml(development.id)}">Editar</button><button class="text-button toggle-development" data-id="${escapeHtml(development.id)}">${development.published ? "Ocultar" : "Publicar"}</button><button class="text-button delete-development" data-id="${escapeHtml(development.id)}">Desactivar</button>`}</div>` : "";
+  return `<article class="development-card glass-panel"><div class="development-cover" style="background-image:url('${escapeHtml(cover)}')"><span class="development-cover-label">${escapeHtml(development.name)}</span></div><div class="development-body"><div class="development-intro"><div><span class="eyebrow">${escapeHtml(development.city || "Ubicación pendiente")}</span><h3>${escapeHtml(development.type || "Desarrollo")}</h3><p>${escapeHtml(development.description)}</p></div><div class="development-price"><small>Precio inicial</small><strong>${escapeHtml(development.price || "Por definir")}</strong><span>${development.published ? "Publicado" : "Borrador"}</span></div></div><div class="development-stats"><div><strong>${escapeHtml(development.units || 0)}</strong><span>Unidades</span></div><div><strong>${escapeHtml(development.suites || 0)}</strong><span>Suites</span></div><div><strong>${escapeHtml(development.amenitiesCount || amenities.length)}</strong><span>Amenidades</span></div><div><strong>${escapeHtml(development.location || "-")}</strong><span>Ubicación</span></div></div><div class="development-columns"><div><span class="eyebrow">AMENIDADES</span><h4>Servicios destacados</h4><ul class="development-list">${amenities.map((amenity) => `<li>${escapeHtml(amenity)}</li>`).join("") || "<li>Por definir</li>"}</ul></div><div><span class="eyebrow">PUBLICACIÓN</span><h4>${development.published ? "Visible para clientes" : "Solo interno"}</h4><p class="panel-description">${development.demo ? "Ficha de ejemplo basada en el dossier del cliente." : "Registro administrado desde Firebase."}</p></div></div>${actions}</div></article>`;
+}
+
+function renderDevelopments() {
+  const publicGrid = document.querySelector("#publicDevelopmentsGrid");
+  const rpmGrid = document.querySelector("#rpmDevelopmentsGrid");
+  const active = developments.filter((development) => development.active !== false);
+  if (publicGrid) {
+    const published = active.filter((development) => development.published);
+    publicGrid.innerHTML = published.map((development) => renderDevelopmentCard(development, "public")).join("") || `<div class="empty-state glass-panel"><h3>Próximamente</h3><p>Estamos preparando nuevos desarrollos inmobiliarios.</p></div>`;
+  }
+  if (rpmGrid) rpmGrid.innerHTML = active.map((development) => renderDevelopmentCard(development, "rpm")).join("");
+  document.querySelectorAll(".save-demo-development").forEach((button) => button.addEventListener("click", () => saveDemoDevelopment(button.dataset.id)));
+  document.querySelectorAll(".edit-development").forEach((button) => button.addEventListener("click", () => openDevelopmentModal(button.dataset.id)));
+  document.querySelectorAll(".toggle-development").forEach((button) => button.addEventListener("click", () => toggleDevelopment(button.dataset.id)));
+  document.querySelectorAll(".delete-development").forEach((button) => button.addEventListener("click", () => deleteDevelopment(button.dataset.id)));
+}
+
+async function loadDevelopments() {
+  if (!window.rpmDb) { renderDevelopments(); return; }
+  try {
+    const query = document.body.classList.contains("confi-mode") ? window.rpmDb.collection("developments").get() : window.rpmDb.collection("developments").where("published", "==", true).where("active", "==", true).get();
+    const snapshot = await query;
+    if (!snapshot.empty) developments = snapshot.docs.map((document) => ({ id: document.id, active: document.data().active !== false, ...document.data() }));
+  } catch (error) {
+    console.warn("Developments load fallback", error);
+  }
+  renderDevelopments();
+}
+
+let editingDevelopmentId = null;
+
+function closeDevelopmentModal() {
+  const modal = document.querySelector("#developmentModal");
+  if (!modal) return;
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function openDevelopmentModal(developmentId = "") {
+  const modal = document.querySelector("#developmentModal");
+  const form = document.querySelector("#developmentForm");
+  if (!modal || !form) return;
+  const development = developments.find((item) => item.id === developmentId);
+  editingDevelopmentId = development && !development.demo ? developmentId : null;
+  form.reset();
+  if (development && !development.demo) {
+    ["name", "type", "city", "location", "price", "units", "suites", "amenitiesCount", "coverUrl", "description"].forEach((field) => { if (form.elements[field] && development[field] !== undefined) form.elements[field].value = development[field]; });
+    form.elements.amenities.value = Array.isArray(development.amenities) ? development.amenities.join(", ") : development.amenities || "";
+    form.elements.published.checked = Boolean(development.published);
+  }
+  document.querySelector("#developmentModalTitle").textContent = editingDevelopmentId ? "Editar desarrollo" : "Nuevo desarrollo";
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+async function saveDevelopment(event) {
+  event.preventDefault();
+  if (!window.rpmDb) { showToast("Firebase todavía no está disponible."); return; }
+  const form = event.currentTarget;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const record = { name: data.name.trim(), type: data.type, city: data.city.trim(), location: data.location.trim(), price: data.price.trim(), units: Number(data.units || 0), suites: Number(data.suites || 0), amenitiesCount: Number(data.amenitiesCount || 0), coverUrl: data.coverUrl.trim(), description: data.description.trim(), amenities: data.amenities.split(",").map((item) => item.trim()).filter(Boolean), published: form.elements.published.checked, active: true, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() };
+  try {
+    if (editingDevelopmentId) await window.rpmDb.collection("developments").doc(editingDevelopmentId).update(record);
+    else { record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp(); await window.rpmDb.collection("developments").add(record); }
+    closeDevelopmentModal();
+    await loadDevelopments();
+    showToast(editingDevelopmentId ? "Desarrollo actualizado." : "Desarrollo creado.");
+  } catch (error) {
+    showToast("No se pudo guardar el desarrollo. Revisa permisos y reglas de Firestore.");
+    console.error("Development save error", error);
+  }
+}
+
+async function saveDemoDevelopment(developmentId) {
+  const development = developments.find((item) => item.id === developmentId);
+  if (!development || !window.rpmDb) return;
+  const { id, demo, ...record } = development;
+  record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
+  record.updatedAt = window.firebase.firestore.FieldValue.serverTimestamp();
+  try { await window.rpmDb.collection("developments").add(record); await loadDevelopments(); showToast("TERRASER quedó guardado en Firebase."); } catch (error) { showToast("No se pudo guardar TERRASER en Firebase."); console.error(error); }
+}
+
+async function toggleDevelopment(developmentId) {
+  const development = developments.find((item) => item.id === developmentId);
+  if (!development || !window.rpmDb) return;
+  try { await window.rpmDb.collection("developments").doc(developmentId).update({ published: !development.published, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await loadDevelopments(); showToast(development.published ? "Desarrollo ocultado del catálogo." : "Desarrollo publicado en el catálogo."); } catch (error) { showToast("No se pudo cambiar la publicación."); }
+}
+
+async function deleteDevelopment(developmentId) {
+  if (!window.rpmDb || !window.confirm("¿Deseas desactivar este desarrollo?")) return;
+  try { await window.rpmDb.collection("developments").doc(developmentId).update({ active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await loadDevelopments(); showToast("Desarrollo desactivado."); } catch (error) { showToast("No se pudo desactivar el desarrollo."); }
 }
 
 async function loadRpmProperties() {
@@ -397,6 +515,11 @@ document.querySelector("#propertyModal")?.addEventListener("click", (event) => {
 document.querySelector("#propertyForm")?.addEventListener("submit", saveProperty);
 document.querySelector("#rpmPropertySearch")?.addEventListener("input", renderRpmProperties);
 document.querySelector("#rpmPropertyStatus")?.addEventListener("change", renderRpmProperties);
+const newDevelopmentButton = document.querySelector("#newDevelopment");
+if (newDevelopmentButton) newDevelopmentButton.addEventListener("click", () => openDevelopmentModal());
+document.querySelectorAll("[data-close-development-modal]").forEach((button) => button.addEventListener("click", closeDevelopmentModal));
+document.querySelector("#developmentModal")?.addEventListener("click", (event) => { if (event.target.id === "developmentModal") closeDevelopmentModal(); });
+document.querySelector("#developmentForm")?.addEventListener("submit", saveDevelopment);
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
 document.querySelector("#leadModal").addEventListener("click", (event) => { if (event.target.id === "leadModal") closeModal(); });
@@ -447,6 +570,7 @@ searchInput.addEventListener("input", renderProperties);
 typeSelect.addEventListener("change", renderProperties);
 initializeFirebaseTestConnection();
 initializeRpmAuth();
+if (!document.body.classList.contains("confi-mode")) loadDevelopments();
 applyTheme();
 applySavedLogo();
 renderProperties();

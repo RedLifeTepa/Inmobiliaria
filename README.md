@@ -13,7 +13,7 @@ Base modular del proyecto para Altos Film. No es un único `index.html`: `index.
 - `config/firebase-config.js`: configuración preparada para Firebase.
 - `assets/`: logo y recursos visuales.
 
-La V3.1 incluye el módulo inicial de inventario y el primer desarrollo inmobiliario de ejemplo: TERRASER Residencias & Hotel. Sus imágenes pueden recibirse mediante URL directa o enlace compartido de Google Drive.
+La V3.2 incluye la gestión de desarrollos inmobiliarios. TERRASER Residencias & Hotel queda como primer ejemplo y puede guardarse en Firebase desde el RPM. Los administradores pueden crear, editar, publicar, ocultar y desactivar desarrollos; el catálogo público solo muestra los registros publicados y activos. Las imágenes pueden recibirse mediante URL directa o enlace compartido de Google Drive.
 
 La V1 incluye ocho propiedades demostrativas de Tepatitlán y Los Altos. Sus imágenes son referencias públicas de demostración. Antes de publicar el catálogo real se reemplazarán por imágenes autorizadas de la inmobiliaria.
 
