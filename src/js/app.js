@@ -15,11 +15,16 @@ const typeSelect = document.querySelector("#propertyType");
 const toast = document.querySelector("#toast");
 const defaultLogoUrl = "assets/logo-altosfilm.png";
 const logoStorageKey = "rpm.logoUrl";
+const rememberedEmailKey = "rpm.rememberedEmail";
+const rememberUntilKey = "rpm.rememberUntil";
+const rememberWindowMs = 7 * 24 * 60 * 60 * 1000;
 
 function initializeFirebaseTestConnection() {
+  const indicator = document.querySelector("#firebaseIndicator");
   const status = document.querySelector("#firebaseStatus");
   if (!window.firebase || !window.RPM_FIREBASE_CONFIG || window.RPM_FIREBASE_CONFIG.apiKey.startsWith("REEMPLAZAR")) {
     if (status) status.textContent = "Firebase pendiente de configuración";
+    if (indicator) setFirebaseIndicator("offline", "Firebase pendiente de configuración");
     return;
   }
   try {
@@ -28,16 +33,40 @@ function initializeFirebaseTestConnection() {
     window.rpmDb = window.firebase.firestore(app);
     window.RPM_FIREBASE_READY = true;
     if (status) status.textContent = `Firebase de pruebas conectado · ${window.RPM_FIREBASE_CONFIG.projectId}`;
+    checkFirebaseConnection();
   } catch (error) {
     window.RPM_FIREBASE_READY = false;
     if (status) status.textContent = "No se pudo conectar con Firebase de pruebas";
+    if (indicator) setFirebaseIndicator("offline", "Firebase no disponible");
     console.error("Firebase initialization error", error);
+  }
+}
+
+function setFirebaseIndicator(state, message) {
+  const indicator = document.querySelector("#firebaseIndicator");
+  if (!indicator) return;
+  indicator.className = `firebase-indicator ${state}`;
+  indicator.title = message;
+  indicator.setAttribute("aria-label", message);
+}
+
+async function checkFirebaseConnection() {
+  if (!window.rpmDb) return;
+  setFirebaseIndicator("checking", "Comprobando conexión con Firebase");
+  try {
+    await window.rpmDb.collection("zones").limit(1).get({ source: "server" });
+    setFirebaseIndicator("online", "Firebase conectado");
+  } catch (error) {
+    setFirebaseIndicator("offline", "Firebase desconectado o reglas pendientes");
+    console.warn("Firebase connection check failed", error);
   }
 }
 
 function authMessage(error) {
   const messages = {
     "auth/invalid-credential": "El correo o la contraseña no son correctos.",
+    "auth/wrong-password": "La contraseña no es correcta.",
+    "auth/user-not-found": "No existe una cuenta con ese correo.",
     "auth/invalid-email": "Escribe un correo electrónico válido.",
     "auth/user-disabled": "Esta cuenta está deshabilitada.",
     "auth/too-many-requests": "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
@@ -57,6 +86,15 @@ function initializeRpmAuth() {
 
   const auth = window.firebase.auth();
   window.rpmAuth = auth;
+  const rememberedEmail = localStorage.getItem(rememberedEmailKey);
+  const rememberUntil = Number(localStorage.getItem(rememberUntilKey) || 0);
+  if (rememberedEmail && rememberUntil > Date.now()) {
+    form.email.value = rememberedEmail;
+    form.remember.checked = true;
+  } else if (rememberUntil && rememberUntil <= Date.now()) {
+    localStorage.removeItem(rememberedEmailKey);
+    localStorage.removeItem(rememberUntilKey);
+  }
   document.body.classList.add("rpm-locked");
   gate.classList.add("open");
   gate.setAttribute("aria-hidden", "false");
@@ -67,7 +105,15 @@ function initializeRpmAuth() {
     const email = form.email.value.trim();
     const password = form.password.value;
     try {
+      await auth.setPersistence(form.remember.checked ? window.firebase.auth.Auth.Persistence.LOCAL : window.firebase.auth.Auth.Persistence.SESSION);
       await auth.signInWithEmailAndPassword(email, password);
+      if (form.remember.checked) {
+        localStorage.setItem(rememberedEmailKey, email);
+        localStorage.setItem(rememberUntilKey, String(Date.now() + rememberWindowMs));
+      } else {
+        localStorage.removeItem(rememberedEmailKey);
+        localStorage.removeItem(rememberUntilKey);
+      }
       form.reset();
     } catch (error) {
       errorBox.textContent = authMessage(error);
@@ -86,6 +132,15 @@ function initializeRpmAuth() {
       gate.setAttribute("aria-hidden", "false");
       sessionUser.textContent = "Sin sesión activa";
       sessionStatus.textContent = "Acceso protegido";
+      return;
+    }
+
+    const rememberUntil = Number(localStorage.getItem(rememberUntilKey) || 0);
+    if (rememberUntil && rememberUntil <= Date.now()) {
+      localStorage.removeItem(rememberedEmailKey);
+      localStorage.removeItem(rememberUntilKey);
+      await auth.signOut();
+      errorBox.textContent = "Tu periodo de 7 días terminó. Ingresa nuevamente tu contraseña.";
       return;
     }
 
