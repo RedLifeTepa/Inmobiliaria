@@ -290,7 +290,13 @@ async function loadDevelopments() {
   try {
     const query = document.body.classList.contains("confi-mode") ? window.rpmDb.collection("developments").get() : window.rpmDb.collection("developments").where("published", "==", true).where("active", "==", true).get();
     const snapshot = await query;
-    if (!snapshot.empty) developments = snapshot.docs.map((document) => ({ id: document.id, active: document.data().active !== false, ...document.data() }));
+    if (!snapshot.empty) {
+      const records = snapshot.docs.map((document) => ({ id: document.id, active: document.data().active !== false, ...document.data() }));
+      const terraserExists = records.some((development) => development.id === "terraser-demo" || development.name === demoDevelopment.name);
+      developments = terraserExists ? records : [demoDevelopment, ...records];
+    } else {
+      developments = [demoDevelopment];
+    }
   } catch (error) {
     console.warn("Developments load fallback", error);
   }
@@ -366,10 +372,35 @@ async function toggleDevelopment(developmentId) {
   try { await window.rpmDb.collection("developments").doc(developmentId).update({ published: !development.published, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await loadDevelopments(); showToast(development.published ? "Desarrollo ocultado del catálogo." : "Desarrollo publicado en el catálogo."); } catch (error) { showToast("No se pudo cambiar la publicación."); }
 }
 
-async function deleteDevelopment(developmentId) {
-  if (!window.rpmDb || !window.confirm("¿Deseas desactivar este desarrollo?")) return;
-  try { await window.rpmDb.collection("developments").doc(developmentId).update({ active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await loadDevelopments(); showToast("Desarrollo desactivado."); } catch (error) { showToast("No se pudo desactivar el desarrollo."); }
+let pendingDevelopmentDeletionId = null;
+
+function openDeleteDevelopmentModal(developmentId) {
+  const development = developments.find((item) => item.id === developmentId);
+  const modal = document.querySelector("#deleteDevelopmentModal");
+  const name = document.querySelector("#deleteDevelopmentName");
+  if (!development || !modal) return;
+  pendingDevelopmentDeletionId = developmentId;
+  if (name) name.textContent = development.name;
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
 }
+
+function closeDeleteDevelopmentModal() {
+  const modal = document.querySelector("#deleteDevelopmentModal");
+  if (!modal) return;
+  pendingDevelopmentDeletionId = null;
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+async function confirmDeleteDevelopment() {
+  const developmentId = pendingDevelopmentDeletionId;
+  closeDeleteDevelopmentModal();
+  if (!developmentId || !window.rpmDb) return;
+  try { await window.rpmDb.collection("developments").doc(developmentId).update({ active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await loadDevelopments(); showToast("Desarrollo desactivado. Puedes recuperarlo desde Firebase o volver a registrarlo."); } catch (error) { showToast("No se pudo desactivar el desarrollo."); console.error("Development delete error", error); }
+}
+
+function deleteDevelopment(developmentId) { openDeleteDevelopmentModal(developmentId); }
 
 async function loadRpmProperties() {
   if (!window.rpmDb || !document.querySelector("#rpmPropertiesBody")) return;
@@ -546,6 +577,9 @@ document.querySelectorAll("[data-close-development-modal]").forEach((button) => 
 document.querySelector("#developmentModal")?.addEventListener("click", (event) => { if (event.target.id === "developmentModal") closeDevelopmentModal(); });
 document.querySelector("#developmentForm")?.addEventListener("submit", saveDevelopment);
 document.querySelector("#goDevelopmentManager")?.addEventListener("click", () => document.querySelector('[data-panel="developmentManagerPanel"]')?.click());
+document.querySelectorAll("[data-close-delete-development]").forEach((button) => button.addEventListener("click", closeDeleteDevelopmentModal));
+document.querySelector("#deleteDevelopmentModal")?.addEventListener("click", (event) => { if (event.target.id === "deleteDevelopmentModal") closeDeleteDevelopmentModal(); });
+document.querySelector("#confirmDeleteDevelopment")?.addEventListener("click", confirmDeleteDevelopment);
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
 document.querySelector("#leadModal").addEventListener("click", (event) => { if (event.target.id === "leadModal") closeModal(); });
