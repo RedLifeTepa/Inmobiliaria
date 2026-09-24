@@ -1,4 +1,4 @@
-const properties = [
+let properties = [
   { id: "RPM-1001", name: "Casa Encino", type: "Casa", zone: "Mirador del Valle, Tepatitlán", price: "$2,850,000", meta: "3 recámaras · 2 baños", status: "Venta", imageUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80" },
   { id: "RPM-1002", name: "Terreno Los Olivos", type: "Terreno", zone: "Los Olivos, Tepatitlán", price: "$980,000", meta: "420 m² · servicios", status: "Venta", imageUrl: "https://assets.easybroker.com/property_images/4488694/75166387/EB-QF8694.jpeg?version=1715970199" },
   { id: "RPM-1003", name: "Casa Centro", type: "Casa", zone: "Centro, Tepatitlán", price: "$12,500 / mes", meta: "2 recámaras · amueblada", status: "Renta", imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80" },
@@ -18,6 +18,7 @@ const logoStorageKey = "rpm.logoUrl";
 const rememberedEmailKey = "rpm.rememberedEmail";
 const rememberUntilKey = "rpm.rememberUntil";
 const rememberWindowMs = 7 * 24 * 60 * 60 * 1000;
+const themeStorageKey = "rpm.theme";
 
 function initializeFirebaseTestConnection() {
   const indicator = document.querySelector("#firebaseIndicator");
@@ -161,6 +162,7 @@ function initializeRpmAuth() {
       sessionUser.textContent = profile.data().name || user.email;
       sessionStatus.textContent = `Sesión activa · ${role}`;
       errorBox.textContent = "";
+      await loadRpmProperties();
       gate.classList.remove("open");
       gate.setAttribute("aria-hidden", "true");
       document.body.classList.remove("rpm-locked");
@@ -175,6 +177,7 @@ function renderProperties() {
   const query = searchInput.value.toLowerCase().trim();
   const type = typeSelect.value;
   const filtered = properties.filter((property) => {
+    if (property.active === false) return false;
     const matchesQuery = `${property.name} ${property.zone}`.toLowerCase().includes(query);
     return matchesQuery && (type === "all" || property.type === type);
   });
@@ -190,6 +193,126 @@ function renderProperties() {
       </div>
     </article>`).join("") : `<div class="empty-state glass-panel"><h3>No encontramos coincidencias</h3><p>Prueba con otra zona o tipo de inmueble.</p></div>`;
   document.querySelectorAll(".interest-button").forEach((button) => button.addEventListener("click", () => openLeadModal(button.dataset.property)));
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
+}
+
+function propertyTagClass(status) {
+  if (["Vendido", "Rentado"].includes(status)) return "orange";
+  if (["Publicado", "Apartado"].includes(status)) return "blue";
+  return "green";
+}
+
+function renderRpmProperties() {
+  const body = document.querySelector("#rpmPropertiesBody");
+  if (!body) return;
+  const query = (document.querySelector("#rpmPropertySearch")?.value || "").toLowerCase().trim();
+  const status = document.querySelector("#rpmPropertyStatus")?.value || "all";
+  const filtered = properties.filter((property) => {
+    if (property.active === false) return false;
+    const searchable = `${property.id} ${property.name} ${property.zone} ${property.municipality || ""}`.toLowerCase();
+    return searchable.includes(query) && (status === "all" || property.status === status);
+  });
+  body.innerHTML = filtered.length ? filtered.map((property) => `
+    <tr>
+      <td>${escapeHtml(property.id)}</td>
+      <td><strong>${escapeHtml(property.name)}</strong><small>${escapeHtml(property.type)} · ${escapeHtml(property.area || property.meta || "Sin superficie")}</small></td>
+      <td>${escapeHtml(property.zone)}</td>
+      <td>${escapeHtml(property.operation || property.status)} · ${escapeHtml(property.price)}</td>
+      <td><span class="tag ${propertyTagClass(property.status)}">${escapeHtml(property.status)}</span></td>
+      <td><div class="row-actions"><button class="text-button edit-property" data-id="${escapeHtml(property.id)}">Editar</button><button class="text-button delete-property" data-id="${escapeHtml(property.id)}">Desactivar</button></div></td>
+    </tr>`).join("") : `<tr><td colspan="6"><div class="empty-state"><h3>No hay propiedades con esos filtros</h3><p>Registra un inmueble nuevo o modifica la búsqueda.</p></div></td></tr>`;
+  body.querySelectorAll(".edit-property").forEach((button) => button.addEventListener("click", () => openPropertyModal(button.dataset.id)));
+  body.querySelectorAll(".delete-property").forEach((button) => button.addEventListener("click", () => deleteProperty(button.dataset.id)));
+}
+
+async function loadRpmProperties() {
+  if (!window.rpmDb || !document.querySelector("#rpmPropertiesBody")) return;
+  try {
+    const snapshot = await window.rpmDb.collection("properties").get();
+    if (snapshot.empty) {
+      renderRpmProperties();
+      return;
+    }
+    properties = snapshot.docs.map((document) => ({ id: document.id, active: document.data().active !== false, ...document.data() }));
+    renderRpmProperties();
+    showToast(`${properties.length} propiedades cargadas desde Firebase.`);
+  } catch (error) {
+    renderRpmProperties();
+    showToast("No se pudieron cargar las propiedades. Revisa las reglas de Firestore.");
+    console.error("Properties load error", error);
+  }
+}
+
+let editingPropertyId = null;
+
+function closePropertyModal() {
+  const modal = document.querySelector("#propertyModal");
+  if (!modal) return;
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function openPropertyModal(propertyId = "") {
+  const modal = document.querySelector("#propertyModal");
+  const form = document.querySelector("#propertyForm");
+  if (!modal || !form) return;
+  editingPropertyId = propertyId || null;
+  form.reset();
+  const property = properties.find((item) => item.id === propertyId);
+  if (property) {
+    Object.entries({
+      name: property.name, type: property.type, operation: property.operation || "Venta", price: property.price,
+      zone: property.zone, municipality: property.municipality, area: property.area || property.meta,
+      rooms: property.rooms, baths: property.baths, status: property.status, imageUrl: property.imageUrl,
+      description: property.description,
+    }).forEach(([field, value]) => { if (form.elements[field] && value !== undefined) form.elements[field].value = value; });
+    form.elements.published.checked = Boolean(property.published);
+  }
+  document.querySelector("#propertyModalTitle").textContent = property ? "Editar propiedad" : "Registrar propiedad";
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+async function saveProperty(event) {
+  event.preventDefault();
+  if (!window.rpmDb) { showToast("Firebase todavía no está disponible."); return; }
+  const form = event.currentTarget;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const record = {
+    name: data.name.trim(), type: data.type, operation: data.operation, price: data.price.trim(), zone: data.zone.trim(),
+    municipality: data.municipality.trim(), area: data.area.trim(), rooms: Number(data.rooms || 0), baths: Number(data.baths || 0),
+    status: data.status, imageUrl: data.imageUrl.trim(), description: data.description.trim(), published: form.elements.published.checked, active: true,
+    updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try {
+    if (editingPropertyId) {
+      await window.rpmDb.collection("properties").doc(editingPropertyId).update(record);
+    } else {
+      record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
+      await window.rpmDb.collection("properties").add(record);
+    }
+    closePropertyModal();
+    await loadRpmProperties();
+    showToast(editingPropertyId ? "Propiedad actualizada." : "Propiedad registrada.");
+  } catch (error) {
+    showToast("No se pudo guardar la propiedad. Revisa tu rol y las reglas de Firestore.");
+    console.error("Property save error", error);
+  }
+}
+
+async function deleteProperty(propertyId) {
+  if (!window.rpmDb || !propertyId || !window.confirm("¿Deseas desactivar esta propiedad del inventario?")) return;
+  try {
+    await window.rpmDb.collection("properties").doc(propertyId).update({ active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+    await loadRpmProperties();
+    showToast("Propiedad desactivada del inventario.");
+  } catch (error) {
+    showToast("No se pudo eliminar la propiedad.");
+    console.error("Property delete error", error);
+  }
 }
 
 function normalizeImageUrl(value) {
@@ -225,6 +348,17 @@ function applySavedLogo() {
   if (status) status.textContent = localStorage.getItem(logoStorageKey) ? "Logo personalizado" : "Logo original";
 }
 
+function applyTheme() {
+  const isDark = localStorage.getItem(themeStorageKey) === "dark";
+  document.body.classList.toggle("dark-mode", isDark);
+  const button = document.querySelector("#themeToggle");
+  if (button) {
+    button.textContent = isDark ? "☀" : "◐";
+    button.title = isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
+    button.setAttribute("aria-label", button.title);
+  }
+}
+
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
@@ -256,6 +390,14 @@ document.querySelectorAll("[data-panel]").forEach((button) => button.addEventLis
   document.querySelectorAll(".rpm-panel").forEach((panel) => panel.classList.toggle("active-panel", panel.id === button.dataset.panel));
 }));
 
+const newPropertyButton = document.querySelector("#newProperty");
+if (newPropertyButton) newPropertyButton.addEventListener("click", () => openPropertyModal());
+document.querySelectorAll("[data-close-property-modal]").forEach((button) => button.addEventListener("click", closePropertyModal));
+document.querySelector("#propertyModal")?.addEventListener("click", (event) => { if (event.target.id === "propertyModal") closePropertyModal(); });
+document.querySelector("#propertyForm")?.addEventListener("submit", saveProperty);
+document.querySelector("#rpmPropertySearch")?.addEventListener("input", renderRpmProperties);
+document.querySelector("#rpmPropertyStatus")?.addEventListener("change", renderRpmProperties);
+
 document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
 document.querySelector("#leadModal").addEventListener("click", (event) => { if (event.target.id === "leadModal") closeModal(); });
 document.querySelector("#leadForm").addEventListener("submit", (event) => {
@@ -273,7 +415,12 @@ document.querySelector("#newLead").addEventListener("click", () => openLeadModal
 document.querySelector("#newAction").addEventListener("click", () => showToast("Acciones rápidas disponibles en la siguiente versión."));
 document.querySelector("#logoutDemo").addEventListener("click", () => showToast("Sesión de demostración cerrada."));
 document.querySelectorAll(".map-pin").forEach((pin) => pin.addEventListener("click", () => showToast(`Zona seleccionada: ${pin.dataset.pin}`)));
-document.querySelector("#themeToggle").addEventListener("click", () => { document.body.classList.toggle("soft-mode"); showToast("Modo visual actualizado."); });
+document.querySelector("#themeToggle").addEventListener("click", () => {
+  const nextTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
+  localStorage.setItem(themeStorageKey, nextTheme);
+  applyTheme();
+  showToast(nextTheme === "dark" ? "Modo oscuro activado." : "Modo claro activado.");
+});
 const logoSettingsForm = document.querySelector("#logoSettingsForm");
 if (logoSettingsForm) {
   logoSettingsForm.addEventListener("submit", (event) => {
@@ -300,5 +447,6 @@ searchInput.addEventListener("input", renderProperties);
 typeSelect.addEventListener("change", renderProperties);
 initializeFirebaseTestConnection();
 initializeRpmAuth();
+applyTheme();
 applySavedLogo();
 renderProperties();
