@@ -96,7 +96,7 @@
                 <button class="nav-item" data-panel="documentsPanel">▤ <span>Expedientes</span></button>
                 <button class="nav-item" data-panel="settingsPanel">⚙ <span>Configuración</span></button>
               </nav>
-              <div class="sidebar-footer"><small>Sesión de demostración</small><strong>Administrador RPM</strong><button id="logoutDemo">Cerrar sesión</button></div>
+              <div class="sidebar-footer"><small id="sessionStatus">Sesión protegida</small><strong id="sessionUser">Cargando usuario…</strong><button id="logoutDemo">Cerrar sesión</button></div>
             </aside>
 
             <div class="rpm-content">
@@ -146,9 +146,11 @@
     </div>
 
     <div class="modal-backdrop" id="leadModal" aria-hidden="true"><div class="modal glass-panel"><button class="modal-close" data-close-modal>×</button><span class="eyebrow">CAPTACIÓN DE INTERESADOS</span><h3>Quiero información</h3><p>Déjanos tus datos y un asesor dará seguimiento a tu interés.</p><form id="leadForm"><label>Nombre<input name="name" required placeholder="Tu nombre" /></label><label>Teléfono<input name="phone" required placeholder="10 dígitos" /></label><label>Propiedad de interés<select name="property"><option>Casa Encino</option><option>Terreno Los Olivos</option><option>Casa Centro</option></select></label><label>Mensaje<textarea name="message" rows="3" placeholder="¿Qué te gustaría conocer?"></textarea></label><label class="consent"><input type="checkbox" required /> Acepto que la inmobiliaria me contacte.</label><button class="primary-button" type="submit">Enviar interés</button></form></div></div>
+    <div class="auth-backdrop" id="authGate" aria-hidden="true"><div class="auth-card glass-panel"><img src="assets/logo-altosfilm.png" alt="Altos Film" class="auth-logo" data-brand-logo /><span class="eyebrow">ACCESO PRIVADO</span><h2>Entrar al RPM</h2><p>Ingresa con una cuenta autorizada para administrar la operación inmobiliaria.</p><form id="loginForm" class="auth-form"><label>Correo electrónico<input name="email" type="email" autocomplete="username" required placeholder="usuario@dominio.com" /></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña" /></label><div class="auth-error" id="authError" role="alert"></div><button class="primary-button" type="submit">Ingresar al sistema</button></form><small>El catálogo público no requiere acceso.</small></div></div>
     <div class="toast" id="toast" role="status"></div>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="config/firebase-config.js"></script>
     <script src="src/js/app.js"></script>
   </body>

@@ -35,6 +35,87 @@ function initializeFirebaseTestConnection() {
   }
 }
 
+function authMessage(error) {
+  const messages = {
+    "auth/invalid-credential": "El correo o la contraseña no son correctos.",
+    "auth/invalid-email": "Escribe un correo electrónico válido.",
+    "auth/user-disabled": "Esta cuenta está deshabilitada.",
+    "auth/too-many-requests": "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
+  };
+  return messages[error?.code] || "No fue posible iniciar sesión. Revisa tu conexión e inténtalo nuevamente.";
+}
+
+function initializeRpmAuth() {
+  if (!document.body.classList.contains("confi-mode")) return;
+  const gate = document.querySelector("#authGate");
+  const form = document.querySelector("#loginForm");
+  const errorBox = document.querySelector("#authError");
+  const sessionUser = document.querySelector("#sessionUser");
+  const sessionStatus = document.querySelector("#sessionStatus");
+  const logoutButton = document.querySelector("#logoutDemo");
+  if (!gate || !form || !window.firebase?.auth) return;
+
+  const auth = window.firebase.auth();
+  window.rpmAuth = auth;
+  document.body.classList.add("rpm-locked");
+  gate.classList.add("open");
+  gate.setAttribute("aria-hidden", "false");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorBox.textContent = "Validando acceso…";
+    const email = form.email.value.trim();
+    const password = form.password.value;
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      form.reset();
+    } catch (error) {
+      errorBox.textContent = authMessage(error);
+    }
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    await auth.signOut();
+    showToast("Sesión cerrada correctamente.");
+  });
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      document.body.classList.add("rpm-locked");
+      gate.classList.add("open");
+      gate.setAttribute("aria-hidden", "false");
+      sessionUser.textContent = "Sin sesión activa";
+      sessionStatus.textContent = "Acceso protegido";
+      return;
+    }
+
+    try {
+      const profile = await window.rpmDb.collection("users").doc(user.uid).get();
+      if (!profile.exists) {
+        errorBox.textContent = "La cuenta existe, pero todavía no tiene un perfil autorizado en el RPM.";
+        await auth.signOut();
+        return;
+      }
+      const role = profile.data().role;
+      const allowedRoles = ["admin", "direccion", "asesor", "cobranza", "consulta"];
+      if (!allowedRoles.includes(role)) {
+        errorBox.textContent = "Tu cuenta no tiene un rol autorizado para entrar al RPM.";
+        await auth.signOut();
+        return;
+      }
+      sessionUser.textContent = profile.data().name || user.email;
+      sessionStatus.textContent = `Sesión activa · ${role}`;
+      errorBox.textContent = "";
+      gate.classList.remove("open");
+      gate.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("rpm-locked");
+    } catch (error) {
+      errorBox.textContent = "No se pudo validar el perfil. Confirma que las reglas de Firestore estén publicadas.";
+      console.error("RPM profile validation error", error);
+    }
+  });
+}
+
 function renderProperties() {
   const query = searchInput.value.toLowerCase().trim();
   const type = typeSelect.value;
@@ -163,5 +244,6 @@ if (logoSettingsForm) {
 searchInput.addEventListener("input", renderProperties);
 typeSelect.addEventListener("change", renderProperties);
 initializeFirebaseTestConnection();
+initializeRpmAuth();
 applySavedLogo();
 renderProperties();
