@@ -723,35 +723,45 @@ document.querySelector('#unitStatusFilter')?.addEventListener('change',renderDev
 document.querySelector('#unitForm')?.addEventListener('submit',saveUnit);
 document.querySelectorAll('[data-close-unit-modal]').forEach(b=>b.addEventListener('click',closeUnitModal));
 
-// V3.3.2 - dropdowns personalizados Liquid Glass para filtros de unidades.
-(function initUnitLiquidSelects(){
-  const ids=['unitDevelopmentFilter','unitStatusFilter'];
+// V4.0.1 - Selectores Liquid Glass estables y reutilizables.
+(function initLiquidSelects(){
+  const ids=['unitDevelopmentFilter','unitStatusFilter','mapEntityFilter','mapZoneFilter'];
+  const registry=new Map();
+  function closeAll(except){
+    document.querySelectorAll('.rpm-select.is-open').forEach(root=>{
+      if(root!==except){root.classList.remove('is-open');root.querySelector('.rpm-select__trigger')?.setAttribute('aria-expanded','false');}
+    });
+  }
   function enhance(select){
-    if(!select || select.dataset.liquidEnhanced==='true') return;
-    select.dataset.liquidEnhanced='true';
+    if(!select || registry.has(select)) return;
     select.classList.add('rpm-native-select');
+    select.setAttribute('aria-hidden','true');
+    select.tabIndex=-1;
     const root=document.createElement('div'); root.className='rpm-select';
     const trigger=document.createElement('button'); trigger.type='button'; trigger.className='rpm-select__trigger'; trigger.setAttribute('aria-haspopup','listbox'); trigger.setAttribute('aria-expanded','false');
-    const label=document.createElement('span'); const chevron=document.createElement('span'); chevron.className='rpm-select__chevron';
+    const label=document.createElement('span'); label.className='rpm-select__label';
+    const chevron=document.createElement('span'); chevron.className='rpm-select__chevron'; chevron.setAttribute('aria-hidden','true');
     trigger.append(label,chevron);
     const menu=document.createElement('div'); menu.className='rpm-select__menu'; menu.setAttribute('role','listbox');
     select.insertAdjacentElement('afterend',root); root.append(trigger,menu);
     function sync(){
-      const current=select.options[select.selectedIndex]; label.textContent=current?.textContent||'Seleccionar'; menu.innerHTML='';
-      [...select.options].forEach(opt=>{const b=document.createElement('button');b.type='button';b.className='rpm-select__option'+(opt.value===select.value?' is-selected':'');b.textContent=opt.textContent;b.dataset.value=opt.value;b.setAttribute('role','option');b.setAttribute('aria-selected',opt.value===select.value?'true':'false');b.addEventListener('click',()=>{select.value=opt.value;select.dispatchEvent(new Event('change',{bubbles:true}));sync();close();});menu.appendChild(b)});
+      const current=select.options[select.selectedIndex]; label.textContent=current?.textContent||'Seleccionar'; menu.replaceChildren();
+      [...select.options].forEach(opt=>{
+        const b=document.createElement('button'); b.type='button'; b.className='rpm-select__option'+(opt.value===select.value?' is-selected':''); b.textContent=opt.textContent; b.dataset.value=opt.value; b.setAttribute('role','option'); b.setAttribute('aria-selected',opt.value===select.value?'true':'false');
+        b.addEventListener('click',()=>{select.value=opt.value; select.dispatchEvent(new Event('change',{bubbles:true})); sync(); root.classList.remove('is-open'); trigger.setAttribute('aria-expanded','false');});
+        menu.appendChild(b);
+      });
     }
-    function close(){root.classList.remove('is-open');trigger.setAttribute('aria-expanded','false')}
-    trigger.addEventListener('click',e=>{e.stopPropagation();document.querySelectorAll('.rpm-select.is-open').forEach(x=>{if(x!==root)x.classList.remove('is-open')});const open=root.classList.toggle('is-open');trigger.setAttribute('aria-expanded',String(open))});
+    trigger.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const opening=!root.classList.contains('is-open');closeAll(root);root.classList.toggle('is-open',opening);trigger.setAttribute('aria-expanded',String(opening));});
     select.addEventListener('change',sync);
-    new MutationObserver(sync).observe(select,{childList:true,subtree:true,attributes:true});
-    document.addEventListener('click',e=>{if(!root.contains(e.target))close()});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-    sync();
+    const observer=new MutationObserver(sync); observer.observe(select,{childList:true,subtree:true});
+    registry.set(select,{sync,observer,root}); sync();
   }
-  const start=()=>ids.forEach(id=>enhance(document.getElementById(id)));
+  function start(){ids.forEach(id=>enhance(document.getElementById(id)));}
+  document.addEventListener('click',()=>closeAll());
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
-
 
 // V4.0 - Geolocalización, mapas y zonas
 let rpmZones = [];

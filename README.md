@@ -34,7 +34,7 @@ V4.0: geolocalización, mapas y zonas.
 - La portada `assets/terraser-cover.png` queda incluida localmente para evitar dependencias externas.
 - La información comercial de TERRASER es demostrativa y debe validarse antes de publicación oficial.
 
-## V4.0 - Geolocalizacion, mapas y zonas
+## V4.0.1 - Geolocalizacion, mapas y zonas · ancla estable
 - Modulo privado Mapas y zonas con mapa interactivo OpenStreetMap/Leaflet.
 - Coordenadas y privacidad (exacta, aproximada o privada) en propiedades y desarrollos.
 - Catalogo CRUD de zonas comerciales con municipio, asesor y centro geografico.
