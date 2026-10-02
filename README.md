@@ -21,3 +21,11 @@ La colección `properties` ya está contemplada en `firebase/firestore.rules` pa
 ## Siguiente versión
 
 V4.0: geolocalización, mapas y zonas.
+
+## V3.1 / V3.2 - Desarrollos y unidades
+- Se agrega el módulo **Desarrollos** al RPM.
+- TERRASER queda como ejemplo real de desarrollo mixto, conservando las propiedades demostrativas existentes.
+- El desarrollo puede guardarse en Firebase y después editarse, publicarse/ocultarse o desactivarse con confirmación.
+- Se incorpora el concepto de **unidades de desarrollo**: TERRASER muestra 10 residencias demostrativas con estado independiente y datos heredados del proyecto.
+- La portada `assets/terraser-cover.png` queda incluida localmente para evitar dependencias externas.
+- La información comercial de TERRASER es demostrativa y debe validarse antes de publicación oficial.

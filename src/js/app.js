@@ -635,3 +635,18 @@ if (!document.body.classList.contains("confi-mode")) loadDevelopments();
 applyTheme();
 applySavedLogo();
 renderProperties();
+
+// V3.2 · Unidades demostrativas de TERRASER. Cada unidad mantiene estado propio y hereda el desarrollo.
+const terraserDemoUnits = Array.from({ length: 10 }, (_, index) => ({
+  id: `TERRASER-R${String(index + 1).padStart(2, "0")}`,
+  name: `Residencia ${String(index + 1).padStart(2, "0")}`,
+  developmentId: "terraser-demo",
+  area: "120 m² aprox.", rooms: 3, baths: 2,
+  status: index === 0 ? "Apartado" : "Disponible",
+  price: "$1,200,000",
+}));
+function renderTerraserUnits(){
+  const grid=document.querySelector("#terraserUnitsGrid"); if(!grid) return;
+  grid.innerHTML=terraserDemoUnits.map(unit=>`<article class="unit-card"><strong>${escapeHtml(unit.name)}</strong><span>${escapeHtml(unit.status)}</span><small>${escapeHtml(unit.area)} · ${unit.rooms} recámaras · ${unit.baths} baños</small><small>${escapeHtml(unit.price)} · Hereda amenidades TERRASER</small></article>`).join("");
+}
+document.addEventListener("DOMContentLoaded", renderTerraserUnits);
