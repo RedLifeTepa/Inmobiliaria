@@ -269,6 +269,7 @@ function renderDevelopments() {
   }
   if (rpmGrid) rpmGrid.innerHTML = active.map((development) => renderDevelopmentCard(development, "rpm")).join("");
   document.querySelectorAll(".save-demo-development").forEach((button) => button.addEventListener("click", () => saveDemoDevelopment(button.dataset.id)));
+  document.querySelectorAll(".manage-development-units").forEach((button) => button.addEventListener("click", () => selectDevelopmentUnits(button.dataset.id)));
   document.querySelectorAll(".edit-development").forEach((button) => button.addEventListener("click", () => openDevelopmentModal(button.dataset.id)));
   document.querySelectorAll(".toggle-development").forEach((button) => button.addEventListener("click", () => toggleDevelopment(button.dataset.id)));
   document.querySelectorAll(".delete-development").forEach((button) => button.addEventListener("click", () => deleteDevelopment(button.dataset.id)));
@@ -304,6 +305,7 @@ async function loadDevelopments() {
     console.warn("Developments load fallback", error);
   }
   renderDevelopments();
+  refreshDevelopmentSelectors();
 }
 
 let editingDevelopmentId = null;
@@ -638,17 +640,74 @@ applyTheme();
 applySavedLogo();
 renderProperties();
 
-// V3.2 · Unidades demostrativas de TERRASER. Cada unidad mantiene estado propio y hereda el desarrollo.
-const terraserDemoUnits = Array.from({ length: 10 }, (_, index) => ({
-  id: `TERRASER-R${String(index + 1).padStart(2, "0")}`,
-  name: `Residencia ${String(index + 1).padStart(2, "0")}`,
-  developmentId: "terraser-demo",
-  area: "120 m² aprox.", rooms: 3, baths: 2,
-  status: index === 0 ? "Apartado" : "Disponible",
-  price: "$1,200,000",
-}));
-function renderTerraserUnits(){
-  const grid=document.querySelector("#terraserUnitsGrid"); if(!grid) return;
-  grid.innerHTML=terraserDemoUnits.map(unit=>`<article class="unit-card"><strong>${escapeHtml(unit.name)}</strong><span>${escapeHtml(unit.status)}</span><small>${escapeHtml(unit.area)} · ${unit.rooms} recámaras · ${unit.baths} baños</small><small>${escapeHtml(unit.price)} · Hereda amenidades TERRASER</small></article>`).join("");
+
+
+// V3.3 · Gestión integral de unidades por desarrollo
+let developmentUnits = [];
+let editingUnitId = null;
+
+function refreshDevelopmentSelectors() {
+  const active = developments.filter(d => d.active !== false);
+  [document.querySelector('#unitDevelopmentFilter'), document.querySelector('#unitDevelopmentId')].forEach(select => {
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = (select.id === 'unitDevelopmentFilter' ? '<option value="">Seleccionar desarrollo</option>' : '<option value="">Selecciona...</option>') + active.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('');
+    if (active.some(d => d.id === current)) select.value = current;
+  });
 }
-document.addEventListener("DOMContentLoaded", renderTerraserUnits);
+
+function selectDevelopmentUnits(developmentId) {
+  const filter = document.querySelector('#unitDevelopmentFilter');
+  if (filter) filter.value = developmentId;
+  loadDevelopmentUnits(developmentId);
+  document.querySelector('#developmentUnitsGrid')?.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+async function loadDevelopmentUnits(developmentId = document.querySelector('#unitDevelopmentFilter')?.value || '') {
+  refreshDevelopmentSelectors();
+  const grid = document.querySelector('#developmentUnitsGrid');
+  const title = document.querySelector('#unitsSectionTitle');
+  if (!grid) return;
+  const development = developments.find(d => d.id === developmentId);
+  if (title) title.textContent = development ? `Unidades de ${development.name}` : 'Unidades del desarrollo';
+  if (!developmentId) { grid.innerHTML='<div class="empty-state"><h3>Selecciona un desarrollo</h3><p>Desde aquí podrás crear y administrar todas sus unidades.</p></div>'; return; }
+  try {
+    if (window.rpmDb) {
+      const snap = await window.rpmDb.collection('developmentUnits').where('developmentId','==',developmentId).get();
+      developmentUnits = snap.docs.map(doc => ({id:doc.id, ...doc.data()}));
+    }
+  } catch(e) { console.warn('Units load fallback',e); }
+  if (!developmentUnits.length && (development.name || '').includes('TERRASER')) {
+    developmentUnits = Array.from({length:10},(_,i)=>({id:`demo-terraser-${i+1}`,developmentId,name:`Residencia ${String(i+1).padStart(2,'0')}`,type:'Residencia',status:'Disponible',price:'$1,200,000',area:'120 m²',rooms:3,baths:2,published:true,demo:true}));
+  }
+  renderDevelopmentUnits();
+}
+
+function renderDevelopmentUnits() {
+  const grid=document.querySelector('#developmentUnitsGrid'); if(!grid)return;
+  const status=document.querySelector('#unitStatusFilter')?.value || 'all';
+  const rows=developmentUnits.filter(u=>u.active!==false && (status==='all'||u.status===status));
+  grid.innerHTML=rows.map(u=>`<article class="unit-card"><div class="unit-card-head"><strong>${escapeHtml(u.name)}</strong><span class="tag ${u.status==='Disponible'?'green':u.status==='Vendido'?'blue':'orange'}">${escapeHtml(u.status||'Disponible')}</span></div><small>${escapeHtml(u.type||'Unidad')} · ${escapeHtml(u.area||'Superficie pendiente')}</small><small>${u.rooms||0} recámaras · ${u.baths||0} baños</small><strong>${escapeHtml(u.price||'Precio por definir')}</strong><div class="development-actions">${u.demo?`<button class="secondary-button save-demo-unit" data-id="${escapeHtml(u.id)}">Guardar en Firebase</button>`:`<button class="secondary-button edit-unit" data-id="${escapeHtml(u.id)}">Editar</button><button class="danger-button delete-unit" data-id="${escapeHtml(u.id)}">Desactivar</button>`}</div></article>`).join('') || '<div class="empty-state"><h3>Sin unidades</h3><p>Agrega la primera unidad de este desarrollo.</p></div>';
+  document.querySelectorAll('.edit-unit').forEach(b=>b.addEventListener('click',()=>openUnitModal(b.dataset.id)));
+  document.querySelectorAll('.delete-unit').forEach(b=>b.addEventListener('click',()=>deactivateUnit(b.dataset.id)));
+  document.querySelectorAll('.save-demo-unit').forEach(b=>b.addEventListener('click',()=>saveDemoUnit(b.dataset.id)));
+}
+
+function openUnitModal(unitId='') {
+  const modal=document.querySelector('#unitModal'), form=document.querySelector('#unitForm'); if(!modal||!form)return;
+  refreshDevelopmentSelectors(); form.reset(); editingUnitId=null;
+  const unit=developmentUnits.find(u=>u.id===unitId);
+  if(unit && !unit.demo){ editingUnitId=unitId; ['developmentId','name','type','status','price','area','rooms','baths','imageUrl','description'].forEach(k=>{if(form.elements[k]&&unit[k]!==undefined)form.elements[k].value=unit[k]}); form.elements.published.checked=unit.published!==false; }
+  else { const current=document.querySelector('#unitDevelopmentFilter')?.value; if(current) form.elements.developmentId.value=current; form.elements.published.checked=true; }
+  document.querySelector('#unitModalTitle').textContent=editingUnitId?'Editar unidad':'Nueva unidad'; modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
+}
+function closeUnitModal(){const m=document.querySelector('#unitModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
+async function saveUnit(e){e.preventDefault();if(!window.rpmDb){showToast('Firebase todavía no está disponible.');return} const f=e.currentTarget,d=Object.fromEntries(new FormData(f).entries()); const rec={developmentId:d.developmentId,name:d.name.trim(),type:d.type,status:d.status,price:d.price.trim(),area:d.area.trim(),rooms:Number(d.rooms||0),baths:Number(d.baths||0),imageUrl:d.imageUrl.trim(),description:d.description.trim(),published:f.elements.published.checked,active:true,updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()}; try{if(editingUnitId)await window.rpmDb.collection('developmentUnits').doc(editingUnitId).update(rec);else{rec.createdAt=window.firebase.firestore.FieldValue.serverTimestamp();await window.rpmDb.collection('developmentUnits').add(rec)} closeUnitModal();document.querySelector('#unitDevelopmentFilter').value=d.developmentId;await loadDevelopmentUnits(d.developmentId);showToast(editingUnitId?'Unidad actualizada.':'Unidad creada.')}catch(err){console.error(err);showToast('No se pudo guardar la unidad. Revisa las reglas de Firebase.')}}
+async function saveDemoUnit(id){const u=developmentUnits.find(x=>x.id===id);if(!u||!window.rpmDb)return;const dev=developments.find(d=>(d.name||'').includes('TERRASER'));if(!dev||dev.demo){showToast('Primero guarda TERRASER en Firebase para asociar sus unidades.');return}const {id:_,demo,...rec}=u;rec.developmentId=dev.id;rec.active=true;rec.createdAt=window.firebase.firestore.FieldValue.serverTimestamp();rec.updatedAt=rec.createdAt;await window.rpmDb.collection('developmentUnits').add(rec);showToast(`${u.name} guardada en Firebase.`);await loadDevelopmentUnits(dev.id)}
+async function deactivateUnit(id){if(!window.rpmDb||!confirm('¿Desactivar esta unidad? No se eliminará físicamente.'))return;await window.rpmDb.collection('developmentUnits').doc(id).update({active:false,updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()});await loadDevelopmentUnits(document.querySelector('#unitDevelopmentFilter').value);showToast('Unidad desactivada.');}
+
+document.querySelector('#newDevelopmentUnit')?.addEventListener('click',()=>openUnitModal());
+document.querySelector('#unitDevelopmentFilter')?.addEventListener('change',e=>loadDevelopmentUnits(e.target.value));
+document.querySelector('#unitStatusFilter')?.addEventListener('change',renderDevelopmentUnits);
+document.querySelector('#unitForm')?.addEventListener('submit',saveUnit);
+document.querySelectorAll('[data-close-unit-modal]').forEach(b=>b.addEventListener('click',closeUnitModal));

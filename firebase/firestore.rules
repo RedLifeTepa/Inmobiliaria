@@ -92,6 +92,13 @@ service cloud.firestore {
       allow create, update, delete: if isStaff();
     }
 
+    // Unidades de desarrollos: administración privada y lectura pública solo de unidades publicadas.
+    match /developmentUnits/{unitId} {
+      allow read: if (signedIn() && isStaff())
+        || (!signedIn() && resource.data.published == true && resource.data.active == true);
+      allow create, update, delete: if isStaff();
+    }
+
     match /settings/{settingId} {
       allow read: if isStaff();
       allow write: if isAdmin();

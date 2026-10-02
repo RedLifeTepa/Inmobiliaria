@@ -1,3 +1,7 @@
+## Versión actual: V3.3 – Gestión integral de desarrollos
+
+Incluye desarrollos, publicación pública, unidades administrables y TERRASER como ejemplo.
+
 # RPM Inmobiliario V3.2
 
 Versión funcional del módulo de registro e inventario de propiedades, construida sobre la V2.3.
