@@ -33,3 +33,10 @@ V4.0: geolocalización, mapas y zonas.
 - Se incorpora el concepto de **unidades de desarrollo**: TERRASER muestra 10 residencias demostrativas con estado independiente y datos heredados del proyecto.
 - La portada `assets/terraser-cover.png` queda incluida localmente para evitar dependencias externas.
 - La información comercial de TERRASER es demostrativa y debe validarse antes de publicación oficial.
+
+## V4.0 - Geolocalizacion, mapas y zonas
+- Modulo privado Mapas y zonas con mapa interactivo OpenStreetMap/Leaflet.
+- Coordenadas y privacidad (exacta, aproximada o privada) en propiedades y desarrollos.
+- Catalogo CRUD de zonas comerciales con municipio, asesor y centro geografico.
+- Filtros del mapa por tipo de entidad y zona.
+- Las unidades de un desarrollo heredan conceptualmente la ubicacion del desarrollo.

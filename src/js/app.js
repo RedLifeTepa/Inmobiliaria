@@ -325,7 +325,7 @@ function openDevelopmentModal(developmentId = "") {
   editingDevelopmentId = development && !development.demo ? developmentId : null;
   form.reset();
   if (development && !development.demo) {
-    ["name", "type", "city", "location", "price", "units", "suites", "amenitiesCount", "coverUrl", "description"].forEach((field) => { if (form.elements[field] && development[field] !== undefined) form.elements[field].value = development[field]; });
+    ["name", "type", "city", "location", "zoneId", "latitude", "longitude", "locationPrivacy", "price", "units", "suites", "amenitiesCount", "coverUrl", "description"].forEach((field) => { if (form.elements[field] && development[field] !== undefined) form.elements[field].value = development[field]; });
     form.elements.amenities.value = Array.isArray(development.amenities) ? development.amenities.join(", ") : development.amenities || "";
     form.elements.published.checked = Boolean(development.published);
   }
@@ -339,7 +339,7 @@ async function saveDevelopment(event) {
   if (!window.rpmDb) { showToast("Firebase todavía no está disponible."); return; }
   const form = event.currentTarget;
   const data = Object.fromEntries(new FormData(form).entries());
-  const record = { name: data.name.trim(), type: data.type, city: data.city.trim(), location: data.location.trim(), price: data.price.trim(), units: Number(data.units || 0), suites: Number(data.suites || 0), amenitiesCount: Number(data.amenitiesCount || 0), coverUrl: data.coverUrl.trim(), description: data.description.trim(), amenities: data.amenities.split(",").map((item) => item.trim()).filter(Boolean), published: form.elements.published.checked, active: true, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() };
+  const record = { name: data.name.trim(), type: data.type, city: data.city.trim(), location: data.location.trim(), zoneId: data.zoneId || "", latitude: data.latitude ? Number(data.latitude) : null, longitude: data.longitude ? Number(data.longitude) : null, locationPrivacy: data.locationPrivacy || "exact", price: data.price.trim(), units: Number(data.units || 0), suites: Number(data.suites || 0), amenitiesCount: Number(data.amenitiesCount || 0), coverUrl: data.coverUrl.trim(), description: data.description.trim(), amenities: data.amenities.split(",").map((item) => item.trim()).filter(Boolean), published: form.elements.published.checked, active: true, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() };
   try {
     if (editingDevelopmentId) await window.rpmDb.collection("developments").doc(editingDevelopmentId).update(record);
     else { record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp(); await window.rpmDb.collection("developments").add(record); }
@@ -444,7 +444,7 @@ function openPropertyModal(propertyId = "") {
   if (property) {
     Object.entries({
       name: property.name, type: property.type, operation: property.operation || "Venta", price: property.price,
-      zone: property.zone, municipality: property.municipality, area: property.area || property.meta,
+      zone: property.zone, municipality: property.municipality, zoneId: property.zoneId, latitude: property.latitude, longitude: property.longitude, locationPrivacy: property.locationPrivacy || "exact", area: property.area || property.meta,
       rooms: property.rooms, baths: property.baths, status: property.status, imageUrl: property.imageUrl,
       description: property.description, owner: property.owner, advisor: property.advisor, services: property.services, features: property.features, documents: property.documents, gallery: Array.isArray(property.gallery) ? property.gallery.join("\n") : property.gallery,
     }).forEach(([field, value]) => { if (form.elements[field] && value !== undefined) form.elements[field].value = value; });
@@ -462,7 +462,7 @@ async function saveProperty(event) {
   const data = Object.fromEntries(new FormData(form).entries());
   const record = {
     name: data.name.trim(), type: data.type, operation: data.operation, price: data.price.trim(), zone: data.zone.trim(),
-    municipality: data.municipality.trim(), area: data.area.trim(), rooms: Number(data.rooms || 0), baths: Number(data.baths || 0),
+    municipality: data.municipality.trim(), zoneId: data.zoneId || "", latitude: data.latitude ? Number(data.latitude) : null, longitude: data.longitude ? Number(data.longitude) : null, locationPrivacy: data.locationPrivacy || "exact", area: data.area.trim(), rooms: Number(data.rooms || 0), baths: Number(data.baths || 0),
     status: data.status, owner: data.owner.trim(), advisor: data.advisor.trim(), services: data.services.trim(), features: data.features.trim(), documents: data.documents.trim(), imageUrl: data.imageUrl.trim(), gallery: data.gallery.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean), description: data.description.trim(), published: form.elements.published.checked, active: true,
     updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
   };
@@ -722,3 +722,86 @@ document.querySelector('#unitDevelopmentFilter')?.addEventListener('change',e=>l
 document.querySelector('#unitStatusFilter')?.addEventListener('change',renderDevelopmentUnits);
 document.querySelector('#unitForm')?.addEventListener('submit',saveUnit);
 document.querySelectorAll('[data-close-unit-modal]').forEach(b=>b.addEventListener('click',closeUnitModal));
+
+// V3.3.2 - dropdowns personalizados Liquid Glass para filtros de unidades.
+(function initUnitLiquidSelects(){
+  const ids=['unitDevelopmentFilter','unitStatusFilter'];
+  function enhance(select){
+    if(!select || select.dataset.liquidEnhanced==='true') return;
+    select.dataset.liquidEnhanced='true';
+    select.classList.add('rpm-native-select');
+    const root=document.createElement('div'); root.className='rpm-select';
+    const trigger=document.createElement('button'); trigger.type='button'; trigger.className='rpm-select__trigger'; trigger.setAttribute('aria-haspopup','listbox'); trigger.setAttribute('aria-expanded','false');
+    const label=document.createElement('span'); const chevron=document.createElement('span'); chevron.className='rpm-select__chevron';
+    trigger.append(label,chevron);
+    const menu=document.createElement('div'); menu.className='rpm-select__menu'; menu.setAttribute('role','listbox');
+    select.insertAdjacentElement('afterend',root); root.append(trigger,menu);
+    function sync(){
+      const current=select.options[select.selectedIndex]; label.textContent=current?.textContent||'Seleccionar'; menu.innerHTML='';
+      [...select.options].forEach(opt=>{const b=document.createElement('button');b.type='button';b.className='rpm-select__option'+(opt.value===select.value?' is-selected':'');b.textContent=opt.textContent;b.dataset.value=opt.value;b.setAttribute('role','option');b.setAttribute('aria-selected',opt.value===select.value?'true':'false');b.addEventListener('click',()=>{select.value=opt.value;select.dispatchEvent(new Event('change',{bubbles:true}));sync();close();});menu.appendChild(b)});
+    }
+    function close(){root.classList.remove('is-open');trigger.setAttribute('aria-expanded','false')}
+    trigger.addEventListener('click',e=>{e.stopPropagation();document.querySelectorAll('.rpm-select.is-open').forEach(x=>{if(x!==root)x.classList.remove('is-open')});const open=root.classList.toggle('is-open');trigger.setAttribute('aria-expanded',String(open))});
+    select.addEventListener('change',sync);
+    new MutationObserver(sync).observe(select,{childList:true,subtree:true,attributes:true});
+    document.addEventListener('click',e=>{if(!root.contains(e.target))close()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+    sync();
+  }
+  const start=()=>ids.forEach(id=>enhance(document.getElementById(id)));
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+
+
+// V4.0 - Geolocalización, mapas y zonas
+let rpmZones = [];
+let rpmLeafletMap = null;
+let rpmMapLayer = null;
+let editingZoneId = null;
+
+function hasCoordinates(item){ return Number.isFinite(Number(item?.latitude)) && Number.isFinite(Number(item?.longitude)); }
+function zoneName(id){ return rpmZones.find(z=>z.id===id)?.name || ''; }
+function refreshZoneSelectors(){
+  const opts = rpmZones.filter(z=>z.active!==false).map(z=>`<option value="${escapeHtml(z.id)}">${escapeHtml(z.name)}</option>`).join('');
+  ['propertyZoneId','developmentZoneId'].forEach(id=>{ const el=document.getElementById(id); if(!el)return; const v=el.value; el.innerHTML='<option value="">Sin zona asignada</option>'+opts; el.value=v; });
+  const f=document.getElementById('mapZoneFilter'); if(f){const v=f.value; f.innerHTML='<option value="all">Todas las zonas</option>'+opts; f.value=[...f.options].some(o=>o.value===v)?v:'all';}
+}
+async function loadZones(){
+  if(!window.rpmDb){ renderZones(); return; }
+  try{ const snap=await window.rpmDb.collection('zones').get(); rpmZones=snap.docs.map(d=>({id:d.id,active:d.data().active!==false,...d.data()})); }
+  catch(e){ console.warn('Zones load error',e); }
+  refreshZoneSelectors(); renderZones(); renderGeoMap();
+}
+function renderZones(){
+  const box=document.getElementById('zonesList'); if(!box)return;
+  const rows=rpmZones.filter(z=>z.active!==false);
+  box.innerHTML=rows.map(z=>`<div class="zone-row"><div class="zone-row-head"><div><strong>${escapeHtml(z.name)}</strong><small>${escapeHtml(z.municipality||'Municipio sin definir')}</small></div><span class="tag blue">${properties.filter(p=>p.zoneId===z.id&&p.active!==false).length+developments.filter(d=>d.zoneId===z.id&&d.active!==false)} registros</span></div><small>${escapeHtml(z.description||'Sin descripción territorial')}</small><small>${z.advisor?'Asesor: '+escapeHtml(z.advisor):'Sin asesor asignado'}</small><div class="zone-actions"><button class="text-button edit-zone" data-id="${escapeHtml(z.id)}">Editar</button><button class="text-button focus-zone" data-id="${escapeHtml(z.id)}">Ver mapa</button></div></div>`).join('')||'<div class="empty-state"><h3>Sin zonas registradas</h3><p>Crea la primera zona comercial para organizar el inventario.</p></div>';
+  box.querySelectorAll('.edit-zone').forEach(b=>b.onclick=()=>openZoneModal(b.dataset.id));
+  box.querySelectorAll('.focus-zone').forEach(b=>b.onclick=()=>{const z=rpmZones.find(x=>x.id===b.dataset.id);if(z&&hasCoordinates(z)&&rpmLeafletMap)rpmLeafletMap.setView([z.latitude,z.longitude],15)});
+  const gs=document.getElementById('geoStats'); if(gs){const p=properties.filter(x=>x.active!==false&&hasCoordinates(x)).length,d=developments.filter(x=>x.active!==false&&hasCoordinates(x)).length;gs.innerHTML=`<div><strong>${rows.length}</strong><span>Zonas activas</span></div><div><strong>${p}</strong><span>Propiedades geolocalizadas</span></div><div><strong>${d}</strong><span>Desarrollos geolocalizados</span></div><div><strong>${properties.filter(x=>x.locationPrivacy==='approximate').length+developments.filter(x=>x.locationPrivacy==='approximate').length}</strong><span>Ubicaciones aproximadas</span></div>`;}
+}
+function initGeoMap(){
+  const el=document.getElementById('rpmMap'); if(!el||!window.L)return;
+  if(!rpmLeafletMap){rpmLeafletMap=L.map(el,{scrollWheelZoom:true}).setView([20.8169,-102.7635],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(rpmLeafletMap);rpmMapLayer=L.layerGroup().addTo(rpmLeafletMap);}
+  setTimeout(()=>rpmLeafletMap.invalidateSize(),80);
+}
+function renderGeoMap(){
+  initGeoMap(); if(!rpmLeafletMap||!rpmMapLayer)return; rpmMapLayer.clearLayers();
+  const type=document.getElementById('mapEntityFilter')?.value||'all', zid=document.getElementById('mapZoneFilter')?.value||'all';
+  const items=[];
+  if(type==='all'||type==='property') properties.filter(x=>x.active!==false&&hasCoordinates(x)&&(zid==='all'||x.zoneId===zid)).forEach(x=>items.push({...x,_kind:'Propiedad'}));
+  if(type==='all'||type==='development') developments.filter(x=>x.active!==false&&hasCoordinates(x)&&(zid==='all'||x.zoneId===zid)).forEach(x=>items.push({...x,_kind:'Desarrollo'}));
+  items.forEach(x=>{const m=L.marker([Number(x.latitude),Number(x.longitude)]).addTo(rpmMapLayer);m.bindPopup(`<div class="geo-popup"><strong>${escapeHtml(x.name||'Sin nombre')}</strong><small>${x._kind} · ${escapeHtml(zoneName(x.zoneId)||x.zone||x.city||'Sin zona')}</small><small>${escapeHtml(x.status||x.type||'')}</small><small>Privacidad: ${x.locationPrivacy==='approximate'?'Aproximada':x.locationPrivacy==='private'?'Privada':'Exacta'}</small></div>`)});
+  if(items.length){const bounds=L.latLngBounds(items.map(x=>[Number(x.latitude),Number(x.longitude)]));rpmLeafletMap.fitBounds(bounds.pad(.18),{maxZoom:15});}
+}
+function openZoneModal(id=''){const m=document.getElementById('zoneModal'),f=document.getElementById('zoneForm');if(!m||!f)return;editingZoneId=id||null;f.reset();const z=rpmZones.find(x=>x.id===id);if(z)['name','municipality','advisor','latitude','longitude','description'].forEach(k=>{if(f.elements[k]&&z[k]!==undefined)f.elements[k].value=z[k]});document.getElementById('zoneModalTitle').textContent=z?'Editar zona comercial':'Nueva zona comercial';m.classList.add('open');m.setAttribute('aria-hidden','false')}
+function closeZoneModal(){const m=document.getElementById('zoneModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
+async function saveZone(e){e.preventDefault();if(!window.rpmDb){showToast('Firebase todavía no está disponible.');return}const f=e.currentTarget,d=Object.fromEntries(new FormData(f).entries()),rec={name:d.name.trim(),municipality:d.municipality.trim(),advisor:d.advisor.trim(),latitude:d.latitude?Number(d.latitude):null,longitude:d.longitude?Number(d.longitude):null,description:d.description.trim(),active:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};try{if(editingZoneId)await rpmDb.collection('zones').doc(editingZoneId).update(rec);else{rec.createdAt=firebase.firestore.FieldValue.serverTimestamp();await rpmDb.collection('zones').add(rec)}closeZoneModal();await loadZones();showToast(editingZoneId?'Zona actualizada.':'Zona creada.')}catch(err){console.error(err);showToast('No se pudo guardar la zona. Revisa las reglas de Firebase.')}}
+
+document.getElementById('newZone')?.addEventListener('click',()=>openZoneModal());
+document.getElementById('zoneForm')?.addEventListener('submit',saveZone);
+document.querySelectorAll('[data-close-zone-modal]').forEach(b=>b.addEventListener('click',closeZoneModal));
+document.getElementById('mapEntityFilter')?.addEventListener('change',renderGeoMap);
+document.getElementById('mapZoneFilter')?.addEventListener('change',renderGeoMap);
+document.querySelector('[data-panel="mapsPanel"]')?.addEventListener('click',()=>{loadZones();setTimeout(renderGeoMap,120)});
+setTimeout(loadZones,1200);

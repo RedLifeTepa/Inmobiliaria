@@ -16,3 +16,22 @@
 
 /* V3.3 */
 .unit-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.unit-card .development-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}.manager-stats{margin-bottom:18px}#developmentUnitsGrid{margin-top:16px}.development-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* V3.3.2 - Selectores Liquid Glass del administrador de unidades */
+.unit-section .table-toolbar{align-items:center;flex-wrap:wrap;overflow:visible;position:relative;z-index:8}
+.unit-section .table-toolbar>select.rpm-native-select{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;clip:rect(0 0 0 0)!important}
+.rpm-select{position:relative;min-width:190px;z-index:1}
+.rpm-select.is-open{z-index:50}
+.rpm-select__trigger{width:100%;min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(255,255,255,.42);border-radius:14px;background:var(--surface);box-shadow:var(--light-shadow),var(--dark-shadow);color:var(--ink);padding:0 14px;font-weight:650;text-align:left;transition:box-shadow .18s ease,transform .18s ease,color .18s ease}
+.rpm-select__trigger:hover,.rpm-select.is-open .rpm-select__trigger{color:var(--primary);box-shadow:var(--pressed-shadow)}
+.rpm-select__chevron{width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .18s ease;flex:0 0 auto}
+.rpm-select.is-open .rpm-select__chevron{transform:rotate(225deg) translate(-2px,-2px)}
+.rpm-select__menu{position:absolute;left:0;right:0;top:calc(100% + 8px);display:none;max-height:260px;overflow:auto;border:1px solid rgba(255,255,255,.5);border-radius:14px;background:var(--surface);box-shadow:0 18px 40px rgba(64,82,99,.22),var(--light-shadow);padding:7px;z-index:100}
+.rpm-select.is-open .rpm-select__menu{display:grid;gap:3px}
+.rpm-select__option{width:100%;border-radius:10px;background:transparent;color:var(--ink);padding:10px 11px;text-align:left;font-weight:600;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.rpm-select__option:hover,.rpm-select__option:focus-visible{outline:0;color:var(--primary);box-shadow:var(--pressed-shadow)}
+.rpm-select__option.is-selected{background:var(--primary);color:#fff;box-shadow:inset 2px 2px 4px rgba(255,255,255,.18),4px 4px 10px rgba(128,145,160,.2)}
+@media(max-width:650px){.unit-section .table-toolbar{align-items:stretch}.rpm-select{width:100%;min-width:0}.rpm-select__menu{position:relative;top:6px;margin-bottom:6px}}
+
+/* V4.0 · Geolocalización, mapas y zonas */
+.geo-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.geo-stats>div{padding:16px;border-radius:16px;background:var(--surface);box-shadow:var(--light-shadow),var(--dark-shadow);display:grid;gap:5px}.geo-stats strong{font-size:25px;color:var(--primary)}.geo-stats span{font-size:11px;color:var(--muted)}.geo-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:18px}.geo-map-card,.zone-card{padding:20px}.geo-filters{display:flex;gap:8px;flex-wrap:wrap}.geo-filters select{border:0;border-radius:12px;background:var(--surface);box-shadow:var(--pressed-shadow);color:var(--ink);padding:10px 12px}.rpm-real-map{height:520px;border-radius:18px;overflow:hidden;margin-top:14px;box-shadow:var(--pressed-shadow);z-index:1}.map-provider-note{display:block;margin-top:10px;color:var(--muted)}.zones-list{display:grid;gap:10px;margin-top:14px}.zone-row{padding:13px;border-radius:14px;background:var(--surface);box-shadow:var(--pressed-shadow)}.zone-row-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.zone-row small{display:block;color:var(--muted);margin-top:5px}.zone-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink)}.geo-popup strong{display:block;margin-bottom:4px}.geo-popup small{display:block;color:var(--muted);margin-top:3px}@media(max-width:980px){.geo-layout{grid-template-columns:1fr}.geo-stats{grid-template-columns:repeat(2,1fr)}.rpm-real-map{height:430px}}@media(max-width:560px){.geo-stats{grid-template-columns:1fr 1fr}.geo-filters{width:100%}.geo-filters select{width:100%}.rpm-real-map{height:360px}}
