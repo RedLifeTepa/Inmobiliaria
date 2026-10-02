@@ -1,4 +1,4 @@
-# RPM Inmobiliario V3.0
+# RPM Inmobiliario V3.2
 
 Versión funcional del módulo de registro e inventario de propiedades, construida sobre la V2.3.
 

@@ -9,6 +9,8 @@ let properties = [
   { id: "RPM-1008", name: "Lote Vista Norte", type: "Terreno", zone: "Vista Hermosa, Tepatitlán", price: "$1,050,000", meta: "360 m² · vista panorámica", status: "Apartado", imageUrl: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80" },
 ];
 
+const localAssetPrefix = window.location.pathname.includes("/rpm/") ? "../" : "";
+
 const demoDevelopment = {
   id: "demo-terraser",
   name: "TERRASER Residencias & Hotel",
@@ -19,7 +21,7 @@ const demoDevelopment = {
   units: 10,
   suites: 24,
   amenitiesCount: 17,
-  coverUrl: "assets/terraser-cover.png",
+  coverUrl: `${localAssetPrefix}assets/terraser-cover.png`,
   description: "Desarrollo con residencias de lujo, suites de hotel, plaza comercial, restaurantes y amenidades para residentes e inversionistas.",
   amenities: ["Sky bar", "Piscina", "Restaurante", "Plaza comercial", "Conserjería 24/7", "Seguridad 24/7"],
   published: true,
@@ -250,7 +252,7 @@ function renderRpmProperties() {
 }
 
 function renderDevelopmentCard(development, mode) {
-  const cover = normalizeImageUrl(development.coverUrl) || "assets/terraser-cover.png";
+  const cover = normalizeImageUrl(development.coverUrl) || `${localAssetPrefix}assets/terraser-cover.png`;
   const amenities = Array.isArray(development.amenities) ? development.amenities : String(development.amenities || "").split(",").map((item) => item.trim()).filter(Boolean);
   const actions = mode === "rpm" ? `<div class="development-actions">${development.demo ? `<button class="secondary-button save-demo-development" data-id="${escapeHtml(development.id)}">Guardar en Firebase</button>` : `<button class="text-button edit-development" data-id="${escapeHtml(development.id)}">Editar</button><button class="text-button toggle-development" data-id="${escapeHtml(development.id)}">${development.published ? "Ocultar" : "Publicar"}</button><button class="text-button delete-development" data-id="${escapeHtml(development.id)}">Desactivar</button>`}</div>` : "";
   return `<article class="development-card glass-panel"><div class="development-cover" style="background-image:url('${escapeHtml(cover)}')"><span class="development-cover-label">${escapeHtml(development.name)}</span></div><div class="development-body"><div class="development-intro"><div><span class="eyebrow">${escapeHtml(development.city || "Ubicación pendiente")}</span><h3>${escapeHtml(development.type || "Desarrollo")}</h3><p>${escapeHtml(development.description)}</p></div><div class="development-price"><small>Precio inicial</small><strong>${escapeHtml(development.price || "Por definir")}</strong><span>${development.published ? "Publicado" : "Borrador"}</span></div></div><div class="development-stats"><div><strong>${escapeHtml(development.units || 0)}</strong><span>Unidades</span></div><div><strong>${escapeHtml(development.suites || 0)}</strong><span>Suites</span></div><div><strong>${escapeHtml(development.amenitiesCount || amenities.length)}</strong><span>Amenidades</span></div><div><strong>${escapeHtml(development.location || "-")}</strong><span>Ubicación</span></div></div><div class="development-columns"><div><span class="eyebrow">AMENIDADES</span><h4>Servicios destacados</h4><ul class="development-list">${amenities.map((amenity) => `<li>${escapeHtml(amenity)}</li>`).join("") || "<li>Por definir</li>"}</ul></div><div><span class="eyebrow">PUBLICACIÓN</span><h4>${development.published ? "Visible para clientes" : "Solo interno"}</h4><p class="panel-description">${development.demo ? "Ficha de ejemplo basada en el dossier del cliente." : "Registro administrado desde Firebase."}</p></div></div>${actions}</div></article>`;
