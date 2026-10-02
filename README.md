@@ -1,28 +1,23 @@
-# RPM Inmobiliario V2.3
+# RPM Inmobiliario V3.0
 
-Versión estable previa al módulo V3.0 de registro de propiedades.
+Versión funcional del módulo de registro e inventario de propiedades, construida sobre la V2.3.
 
 ## Alcance acumulado
 
-- V1.0: base HTML5, CSS3, JavaScript, catálogo y estructura RPM.
-- V1.1: configuración de logo y conexión inicial con Firebase.
-- V1.2: reglas de Firestore y Storage.
-- V2.0: acceso privado mediante Firebase Authentication y roles.
-- V2.1: opción para recordar usuario durante 7 días.
-- V2.2: indicador visual de conexión con Firebase.
-- V2.3: modo claro/oscuro y catálogo público sin acceso visible al RPM/ERP.
+- Conserva V1.0 a V2.3: base web, Firebase, reglas, autenticación, roles, recordar usuario, indicador de conexión y modo claro/oscuro.
+- V3.0: alta, edición, consulta, filtrado y baja lógica de propiedades.
+- Tipos: casas, terrenos, predios, departamentos, locales, bodegas, oficinas y otros.
+- Datos: operación, precio, superficie, habitaciones, baños, servicios, características, zona y municipio.
+- Relaciones: propietario y asesor responsable.
+- Expediente: documentos de referencia, portada, galería y descripción.
+- Estados: Disponible, Publicado, Apartado, Vendido, Rentado y No disponible.
+- Persistencia en la colección `properties` de Cloud Firestore.
+- Baja lógica mediante `active: false`, sin borrar físicamente el registro.
 
-## Estructura
+## Firebase
 
-- `index.html`: catálogo público.
-- `confi.html`: acceso privado al RPM.
-- `portal/index.html`: copia organizada del portal público.
-- `rpm/index.html`: copia organizada del RPM.
-- `config/firebase-config.js`: configuración de Firebase.
-- `firebase/`: reglas de Firestore y Storage.
-- `src/css/app.css`: estilos compartidos y temas claro/oscuro.
-- `src/js/app.js`: navegación, autenticación, persistencia, conexión y comportamiento general.
+La colección `properties` ya está contemplada en `firebase/firestore.rules` para usuarios internos autorizados. Publica las reglas incluidas en el proyecto antes de probar la versión en producción.
 
 ## Siguiente versión
 
-V3.0 incorporará el registro funcional de terrenos, casas, predios y propiedades.
+V4.0: geolocalización, mapas y zonas.

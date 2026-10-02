@@ -232,7 +232,7 @@ function renderRpmProperties() {
   const status = document.querySelector("#rpmPropertyStatus")?.value || "all";
   const filtered = properties.filter((property) => {
     if (property.active === false) return false;
-    const searchable = `${property.id} ${property.name} ${property.zone} ${property.municipality || ""}`.toLowerCase();
+    const searchable = `${property.id} ${property.name} ${property.zone} ${property.municipality || ""} ${property.owner || ""} ${property.advisor || ""}`.toLowerCase();
     return searchable.includes(query) && (status === "all" || property.status === status);
   });
   body.innerHTML = filtered.length ? filtered.map((property) => `
@@ -241,9 +241,10 @@ function renderRpmProperties() {
       <td><strong>${escapeHtml(property.name)}</strong><small>${escapeHtml(property.type)} · ${escapeHtml(property.area || property.meta || "Sin superficie")}</small></td>
       <td>${escapeHtml(property.zone)}</td>
       <td>${escapeHtml(property.operation || property.status)} · ${escapeHtml(property.price)}</td>
+      <td><strong>${escapeHtml(property.owner || "Sin propietario")}</strong><small>${escapeHtml(property.advisor || "Sin asesor")}</small></td>
       <td><span class="tag ${propertyTagClass(property.status)}">${escapeHtml(property.status)}</span></td>
       <td><div class="row-actions"><button class="text-button edit-property" data-id="${escapeHtml(property.id)}">Editar</button><button class="text-button delete-property" data-id="${escapeHtml(property.id)}">Desactivar</button></div></td>
-    </tr>`).join("") : `<tr><td colspan="6"><div class="empty-state"><h3>No hay propiedades con esos filtros</h3><p>Registra un inmueble nuevo o modifica la búsqueda.</p></div></td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="7"><div class="empty-state"><h3>No hay propiedades con esos filtros</h3><p>Registra un inmueble nuevo o modifica la búsqueda.</p></div></td></tr>`;
   body.querySelectorAll(".edit-property").forEach((button) => button.addEventListener("click", () => openPropertyModal(button.dataset.id)));
   body.querySelectorAll(".delete-property").forEach((button) => button.addEventListener("click", () => deleteProperty(button.dataset.id)));
 }
@@ -441,7 +442,7 @@ function openPropertyModal(propertyId = "") {
       name: property.name, type: property.type, operation: property.operation || "Venta", price: property.price,
       zone: property.zone, municipality: property.municipality, area: property.area || property.meta,
       rooms: property.rooms, baths: property.baths, status: property.status, imageUrl: property.imageUrl,
-      description: property.description,
+      description: property.description, owner: property.owner, advisor: property.advisor, services: property.services, features: property.features, documents: property.documents, gallery: Array.isArray(property.gallery) ? property.gallery.join("\n") : property.gallery,
     }).forEach(([field, value]) => { if (form.elements[field] && value !== undefined) form.elements[field].value = value; });
     form.elements.published.checked = Boolean(property.published);
   }
@@ -458,7 +459,7 @@ async function saveProperty(event) {
   const record = {
     name: data.name.trim(), type: data.type, operation: data.operation, price: data.price.trim(), zone: data.zone.trim(),
     municipality: data.municipality.trim(), area: data.area.trim(), rooms: Number(data.rooms || 0), baths: Number(data.baths || 0),
-    status: data.status, imageUrl: data.imageUrl.trim(), description: data.description.trim(), published: form.elements.published.checked, active: true,
+    status: data.status, owner: data.owner.trim(), advisor: data.advisor.trim(), services: data.services.trim(), features: data.features.trim(), documents: data.documents.trim(), imageUrl: data.imageUrl.trim(), gallery: data.gallery.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean), description: data.description.trim(), published: form.elements.published.checked, active: true,
     updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
   };
   try {
