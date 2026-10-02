@@ -34,7 +34,7 @@ const propertyGrid = document.querySelector("#propertyGrid");
 const searchInput = document.querySelector("#propertySearch");
 const typeSelect = document.querySelector("#propertyType");
 const toast = document.querySelector("#toast");
-const defaultLogoUrl = "assets/logo-altosfilm.png";
+const defaultLogoUrl = /\/(rpm|portal)\/?(?:index\.html)?$/.test(window.location.pathname) ? "../assets/logo-altosfilm.png" : "assets/logo-altosfilm.png";
 const logoStorageKey = "rpm.logoUrl";
 const rememberedEmailKey = "rpm.rememberedEmail";
 const rememberUntilKey = "rpm.rememberUntil";
@@ -513,18 +513,29 @@ function getSavedLogoUrl() {
 }
 
 function applySavedLogo() {
-  const logoUrl = normalizeImageUrl(getSavedLogoUrl()) || defaultLogoUrl;
+  const savedLogo = localStorage.getItem(logoStorageKey);
+  const logoUrl = normalizeImageUrl(savedLogo || defaultLogoUrl) || defaultLogoUrl;
   document.querySelectorAll("[data-brand-logo]").forEach((image) => {
-    image.src = logoUrl;
+    image.onerror = null;
     image.onerror = () => {
+      image.onerror = null; // evita bucles si también falla el fallback
+      if (image.src.endsWith(defaultLogoUrl.replace(/^\.\.\//, ""))) {
+        image.style.display = "none";
+        return;
+      }
       image.src = defaultLogoUrl;
-      if (image.id === "logoPreview") showToast("No se pudo cargar el logo. Revisa el enlace.");
+      if (savedLogo && image.id === "logoPreview" && !window.__rpmLogoErrorShown) {
+        window.__rpmLogoErrorShown = true;
+        showToast("No se pudo cargar el logo personalizado. Se restauró el logo original.");
+      }
     };
+    image.style.display = "";
+    image.src = logoUrl;
   });
   const input = document.querySelector("#logoUrlInput");
   const status = document.querySelector("#logoStatus");
-  if (input) input.value = localStorage.getItem(logoStorageKey) || "";
-  if (status) status.textContent = localStorage.getItem(logoStorageKey) ? "Logo personalizado" : "Logo original";
+  if (input) input.value = savedLogo || "";
+  if (status) status.textContent = savedLogo ? "Logo personalizado" : "Logo original";
 }
 
 function applyTheme() {
