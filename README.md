@@ -40,3 +40,9 @@ V4.0: geolocalización, mapas y zonas.
 - Catalogo CRUD de zonas comerciales con municipio, asesor y centro geografico.
 - Filtros del mapa por tipo de entidad y zona.
 - Las unidades de un desarrollo heredan conceptualmente la ubicacion del desarrollo.
+
+
+## V4.0.2
+- Selector de tipo del catálogo público migrado al componente Liquid Glass reutilizable.
+- Consistencia visual entre portal público y RPM.
+- Ajuste responsive del filtro del catálogo.

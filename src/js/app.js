@@ -725,7 +725,7 @@ document.querySelectorAll('[data-close-unit-modal]').forEach(b=>b.addEventListen
 
 // V4.0.1 - Selectores Liquid Glass estables y reutilizables.
 (function initLiquidSelects(){
-  const ids=['unitDevelopmentFilter','unitStatusFilter','mapEntityFilter','mapZoneFilter'];
+  const ids=['propertyType','unitDevelopmentFilter','unitStatusFilter','mapEntityFilter','mapZoneFilter'];
   const registry=new Map();
   function closeAll(except){
     document.querySelectorAll('.rpm-select.is-open').forEach(root=>{
