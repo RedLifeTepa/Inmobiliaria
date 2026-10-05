@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Catálogo público de propiedades de Altos Film" />
     <title>Catálogo inmobiliario | Altos Film</title>
-    <link rel="stylesheet" href="src/css/app.css?v=3.3.0" />
+    <link rel="stylesheet" href="src/css/app.css?v=5.0.0" />
   </head>
   <body class="portal-mode">
     <div class="app-shell">
@@ -27,9 +27,9 @@
         <section id="portalView" class="view active-view">
           <div class="portal-hero">
             <div class="hero-copy">
-              <span class="status-pill">Inventario actualizado</span>
+              <span class="status-pill">Catálogo V5 · Inventario publicado</span>
               <h2>Encuentra un espacio para tu siguiente etapa.</h2>
-              <p>Explora terrenos, casas y propiedades disponibles con ubicación, datos esenciales y atención directa.</p>
+              <p>Explora propiedades y desarrollos publicados, filtra por operación, precio y zona, y consulta cada ficha antes de solicitar información.</p>
               <div class="hero-actions">
                 <button class="primary-button" data-scroll="catalogo">Ver propiedades</button>
                 <button class="secondary-button" id="heroContact">Hablar por WhatsApp</button>
@@ -53,13 +53,14 @@
               <div class="catalog-controls">
                 <label class="search-box"><span>⌕</span><input id="propertySearch" type="search" placeholder="Buscar zona o propiedad" /></label>
                 <select id="propertyType" aria-label="Filtrar tipo de propiedad">
-                  <option value="all">Todos los tipos</option>
-                  <option value="Casa">Casas</option>
-                  <option value="Terreno">Terrenos</option>
+                  <option value="all">Todos los tipos</option><option value="Casa">Casas</option><option value="Terreno">Terrenos</option><option value="Departamento">Departamentos</option><option value="Local">Locales</option><option value="Oficina">Oficinas</option>
                 </select>
+                <select id="publicOperationFilter" aria-label="Filtrar operación"><option value="all">Venta y renta</option><option value="Venta">Venta</option><option value="Renta">Renta</option></select>
+                <select id="publicPriceFilter" aria-label="Filtrar precio"><option value="all">Cualquier precio</option><option value="1000000">Hasta $1 M</option><option value="3000000">Hasta $3 M</option><option value="5000000">Hasta $5 M</option><option value="5000001">Más de $5 M</option></select>
+                <select id="publicZoneFilter" aria-label="Filtrar zona"><option value="all">Todas las zonas</option></select>
               </div>
             </div>
-            <div class="property-grid" id="propertyGrid"></div>
+            <div class="catalog-results-bar"><span id="publicResultCount">0 propiedades</span><button class="text-button" id="clearPublicFilters">Limpiar filtros</button></div><div class="property-grid" id="propertyGrid"></div>
           </section>
 
           <section class="section-block" id="desarrollos-publicos">
@@ -131,11 +132,13 @@
       </main>
     </div>
 
+
+    <div class="modal-backdrop" id="propertyDetailModal" aria-hidden="true"><div class="modal glass-panel public-detail-modal"><button class="modal-close" data-close-detail-modal>×</button><div id="propertyDetailContent"></div></div></div>
     <div class="modal-backdrop" id="leadModal" aria-hidden="true"><div class="modal glass-panel"><button class="modal-close" data-close-modal>×</button><span class="eyebrow">CAPTACIÓN DE INTERESADOS</span><h3>Quiero información</h3><p>Déjanos tus datos y un asesor dará seguimiento a tu interés.</p><form id="leadForm"><label>Nombre<input name="name" required placeholder="Tu nombre" /></label><label>Teléfono<input name="phone" required placeholder="10 dígitos" /></label><label>Propiedad de interés<select name="property"><option>Casa Encino</option><option>Terreno Los Olivos</option><option>Casa Centro</option></select></label><label>Mensaje<textarea name="message" rows="3" placeholder="¿Qué te gustaría conocer?"></textarea></label><label class="consent"><input type="checkbox" required /> Acepto que la inmobiliaria me contacte.</label><button class="primary-button" type="submit">Enviar interés</button></form></div></div>
-    <div class="version-badge" title="Versión de desarrollo">V3.3</div><div class="toast" id="toast" role="status"></div>
+    <div class="version-badge" title="Versión de desarrollo">V5.0</div><div class="toast" id="toast" role="status"></div>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="config/firebase-config.js?v=3.3.0"></script>
-    <script src="src/js/app.js?v=3.3.0"></script>
+    <script src="config/firebase-config.js?v=5.0.0"></script>
+    <script src="src/js/app.js?v=5.0.0"></script>
   </body>
 </html>

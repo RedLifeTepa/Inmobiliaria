@@ -1,3 +1,8 @@
+RPM Inmobiliario V5.0 - Catalogo Publico Avanzado
+
+Base: V4.0.2 Ancla Visual Estable.
+Incluye filtros publicos por tipo, operacion, precio y zona; contador de resultados; ficha publica de propiedad; control de publicacion; privacidad de ubicacion; desarrollos publicados; diseno Liquid Glass responsive.
+
 ## Versión actual: V3.3 – Gestión integral de desarrollos
 
 Incluye desarrollos, publicación pública, unidades administrables y TERRASER como ejemplo.

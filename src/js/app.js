@@ -195,27 +195,51 @@ function initializeRpmAuth() {
   });
 }
 
+function parseMoney(value = "") { const n = Number(String(value).replace(/[^0-9.]/g, "")); return Number.isFinite(n) ? n : 0; }
+function publicPropertyVisible(property){ return property.active !== false && property.published !== false && !["Vendido","Rentado","No disponible"].includes(property.status); }
+function refreshPublicZoneFilter(){
+  const el=document.querySelector('#publicZoneFilter'); if(!el)return; const current=el.value;
+  const zones=[...new Set(properties.filter(publicPropertyVisible).map(p=>p.zone).filter(Boolean))].sort();
+  el.innerHTML='<option value="all">Todas las zonas</option>'+zones.map(z=>`<option value="${escapeHtml(z)}">${escapeHtml(z)}</option>`).join('');
+  el.value=zones.includes(current)?current:'all';
+}
 function renderProperties() {
+  if(!propertyGrid || !searchInput || !typeSelect) return;
+  refreshPublicZoneFilter();
   const query = searchInput.value.toLowerCase().trim();
   const type = typeSelect.value;
+  const operation=document.querySelector('#publicOperationFilter')?.value||'all';
+  const price=document.querySelector('#publicPriceFilter')?.value||'all';
+  const zone=document.querySelector('#publicZoneFilter')?.value||'all';
   const filtered = properties.filter((property) => {
-    if (property.active === false) return false;
-    const matchesQuery = `${property.name} ${property.zone}`.toLowerCase().includes(query);
-    return matchesQuery && (type === "all" || property.type === type);
+    if (!publicPropertyVisible(property)) return false;
+    const matchesQuery = `${property.name} ${property.zone} ${property.municipality||''} ${property.meta||''}`.toLowerCase().includes(query);
+    const matchesType=type==='all'||property.type===type;
+    const matchesOperation=operation==='all'||(property.operation||property.status)===operation;
+    const matchesZone=zone==='all'||property.zone===zone;
+    const amount=parseMoney(property.price); let matchesPrice=true;
+    if(price!=='all'){const limit=Number(price);matchesPrice=limit===5000001?amount>5000000:amount<=limit;}
+    return matchesQuery&&matchesType&&matchesOperation&&matchesZone&&matchesPrice;
   });
+  const count=document.querySelector('#publicResultCount'); if(count)count.textContent=`${filtered.length} ${filtered.length===1?'propiedad':'propiedades'}`;
   propertyGrid.innerHTML = filtered.length ? filtered.map((property) => `
-    <article class="property-card">
-      <div class="property-visual ${property.type === "Terreno" ? "visual-terrain" : ""}" style="background-image:url('${normalizeImageUrl(property.imageUrl)}')">
-        <span class="property-badge">${property.status}</span>
-      </div>
-      <div class="property-body">
-        <h4>${property.name}</h4>
-        <p>${property.zone} · ${property.meta}</p>
-        <div class="property-meta"><span class="property-price">${property.price}</span><button class="text-button interest-button" data-property="${property.name}">Me interesa →</button></div>
-      </div>
-    </article>`).join("") : `<div class="empty-state glass-panel"><h3>No encontramos coincidencias</h3><p>Prueba con otra zona o tipo de inmueble.</p></div>`;
+    <article class="property-card public-property-card">
+      <button class="property-visual property-detail-button ${property.type === "Terreno" ? "visual-terrain" : ""}" data-id="${escapeHtml(property.id)}" style="background-image:url('${normalizeImageUrl(property.imageUrl)}')" aria-label="Ver detalle de ${escapeHtml(property.name)}">
+        <span class="property-badge">${escapeHtml(property.operation||property.status||'Disponible')}</span><span class="property-view-chip">Ver ficha</span>
+      </button>
+      <div class="property-body"><span class="eyebrow">${escapeHtml(property.type||'Propiedad')} · ${escapeHtml(property.zone||'Zona por definir')}</span><h4>${escapeHtml(property.name)}</h4><p>${escapeHtml(property.meta||property.area||'Información disponible con asesor')}</p>
+        <div class="property-meta"><span class="property-price">${escapeHtml(property.price||'Precio a consultar')}</span><div class="property-card-actions"><button class="text-button property-detail-button" data-id="${escapeHtml(property.id)}">Ver detalle</button><button class="text-button interest-button" data-property="${escapeHtml(property.name)}">Me interesa →</button></div></div>
+      </div></article>`).join("") : `<div class="empty-state glass-panel"><h3>No encontramos coincidencias</h3><p>Prueba con otra zona, operación, precio o tipo de inmueble.</p></div>`;
+  document.querySelectorAll('.property-detail-button').forEach(b=>b.addEventListener('click',()=>openPublicPropertyDetail(b.dataset.id)));
   document.querySelectorAll(".interest-button").forEach((button) => button.addEventListener("click", () => openLeadModal(button.dataset.property)));
 }
+function openPublicPropertyDetail(id){
+  const property=properties.find(p=>p.id===id); const modal=document.querySelector('#propertyDetailModal'),box=document.querySelector('#propertyDetailContent'); if(!property||!modal||!box)return;
+  const location=property.locationPrivacy==='private'?'Ubicación reservada':property.locationPrivacy==='approximate'?`${property.zone||''} · ubicación aproximada`:[property.zone,property.municipality].filter(Boolean).join(', ');
+  box.innerHTML=`<div class="public-detail-cover" style="background-image:url('${normalizeImageUrl(property.imageUrl)}')"><span class="property-badge">${escapeHtml(property.operation||property.status||'Disponible')}</span></div><div class="public-detail-body"><span class="eyebrow">${escapeHtml(property.type||'Propiedad')}</span><h3>${escapeHtml(property.name)}</h3><p class="public-detail-location">⌖ ${escapeHtml(location||'Ubicación por definir')}</p><div class="public-detail-stats"><div><strong>${escapeHtml(property.area||property.meta||'—')}</strong><span>Superficie / datos</span></div><div><strong>${escapeHtml(property.bedrooms||'—')}</strong><span>Recámaras</span></div><div><strong>${escapeHtml(property.bathrooms||'—')}</strong><span>Baños</span></div><div><strong>${escapeHtml(property.status||'Disponible')}</strong><span>Disponibilidad</span></div></div><p>${escapeHtml(property.description||'Solicita información para conocer todos los detalles de esta propiedad.')}</p><div class="public-detail-footer"><strong>${escapeHtml(property.price||'Precio a consultar')}</strong><button class="primary-button detail-interest" data-property="${escapeHtml(property.name)}">Solicitar información</button></div></div>`;
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false'); box.querySelector('.detail-interest')?.addEventListener('click',e=>{modal.classList.remove('open');openLeadModal(e.currentTarget.dataset.property)});
+}
+function closePublicPropertyDetail(){const m=document.querySelector('#propertyDetailModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
@@ -725,7 +749,7 @@ document.querySelectorAll('[data-close-unit-modal]').forEach(b=>b.addEventListen
 
 // V4.0.1 - Selectores Liquid Glass estables y reutilizables.
 (function initLiquidSelects(){
-  const ids=['propertyType','unitDevelopmentFilter','unitStatusFilter','mapEntityFilter','mapZoneFilter'];
+  const ids=['propertyType','publicOperationFilter','publicPriceFilter','publicZoneFilter','unitDevelopmentFilter','unitStatusFilter','mapEntityFilter','mapZoneFilter'];
   const registry=new Map();
   function closeAll(except){
     document.querySelectorAll('.rpm-select.is-open').forEach(root=>{
@@ -762,6 +786,12 @@ document.querySelectorAll('[data-close-unit-modal]').forEach(b=>b.addEventListen
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
+
+// V5.0 - Catálogo público avanzado
+['publicOperationFilter','publicPriceFilter','publicZoneFilter'].forEach(id=>document.getElementById(id)?.addEventListener('change',renderProperties));
+document.getElementById('clearPublicFilters')?.addEventListener('click',()=>{if(searchInput)searchInput.value='';if(typeSelect)typeSelect.value='all';['publicOperationFilter','publicPriceFilter','publicZoneFilter'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='all';el.dispatchEvent(new Event('change',{bubbles:true}))}});renderProperties();});
+document.querySelectorAll('[data-close-detail-modal]').forEach(b=>b.addEventListener('click',closePublicPropertyDetail));
+document.getElementById('propertyDetailModal')?.addEventListener('click',e=>{if(e.target.id==='propertyDetailModal')closePublicPropertyDetail()});
 
 // V4.0 - Geolocalización, mapas y zonas
 let rpmZones = [];
