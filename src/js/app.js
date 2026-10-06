@@ -40,6 +40,8 @@ const rememberedEmailKey = "rpm.rememberedEmail";
 const rememberUntilKey = "rpm.rememberUntil";
 const rememberWindowMs = 7 * 24 * 60 * 60 * 1000;
 const themeStorageKey = "rpm.theme";
+const whatsappStorageKey = "rpm.whatsappNumber";
+const defaultWhatsappNumber = "523781097992";
 
 function initializeFirebaseTestConnection() {
   const indicator = document.querySelector("#firebaseIndicator");
@@ -633,27 +635,36 @@ document.querySelector("#deleteDevelopmentModal")?.addEventListener("click", (ev
 document.querySelector("#confirmDeleteDevelopment")?.addEventListener("click", confirmDeleteDevelopment);
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
-document.querySelector("#leadModal").addEventListener("click", (event) => { if (event.target.id === "leadModal") closeModal(); });
+document.querySelector("#leadModal")?.addEventListener("click", (event) => { if (event.target.id === "leadModal") closeModal(); });
 document.querySelector("#leadForm")?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = event.currentTarget;
   const formData = new FormData(form);
   const name = String(formData.get("name") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
-  const email = String(formData.get("email") || "").trim();
+  const normalizedPhone = phone.replace(/\D/g, "");
+  const email = String(formData.get("email") || "").trim().toLowerCase();
   const propertyId = String(formData.get("propertyId") || "").trim();
   const propertyName = String(formData.get("propertyName") || "Consulta general").trim();
+  const preferredTime = String(formData.get("preferredTime") || "").trim();
   const userMessage = String(formData.get("message") || "").trim();
   const message = userMessage || `Solicito información sobre ${propertyName}${propertyId ? ` (${propertyId})` : ""}.`;
-  const lead = { name, phone, email, message, propertyId, propertyName, source: "portal", status: "nuevo" };
   const submitButton = form.querySelector('button[type="submit"]');
   if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Enviando…"; }
   try {
     if (!window.rpmDb) throw new Error("Firebase no está disponible");
-    await window.rpmDb.collection("publicLeads").add({ ...lead, createdAt: window.firebase.firestore.FieldValue.serverTimestamp() });
-    closeModal();
-    form.reset();
-    showToast(`Interés registrado: ${propertyName}.`);
+    let duplicateId = "";
+    if (normalizedPhone.length >= 7) {
+      const dup = await window.rpmDb.collection("publicLeads").where("normalizedPhone", "==", normalizedPhone).where("propertyId", "==", propertyId).limit(1).get();
+      if (!dup.empty) duplicateId = dup.docs[0].id;
+    }
+    if (duplicateId) {
+      showToast(`Ya tenemos tu solicitud para ${propertyName}. Un asesor dará seguimiento.`);
+    } else {
+      await window.rpmDb.collection("publicLeads").add({ name, phone, normalizedPhone, email, message, propertyId, propertyName, preferredTime, consent: true, source: "portal", status: "nuevo", followUpStatus: "pendiente", repeatCount: 0, createdAt: window.firebase.firestore.FieldValue.serverTimestamp(), lastContactAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+      showToast(`Interés registrado: ${propertyName}.`);
+    }
+    closeModal(); form.reset();
   } catch (error) {
     console.error("Lead save error", error);
     showToast("No se pudo registrar la solicitud. Revisa la conexión con Firebase.");
@@ -661,13 +672,43 @@ document.querySelector("#leadForm")?.addEventListener("submit", async (event) =>
     if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Enviar interés"; }
   }
 });
-document.querySelector("#heroContact").addEventListener("click", () => openLeadModal());
+
+function openLeadWhatsApp() {
+  const form = document.querySelector("#leadForm");
+  if (!form) return;
+  const propertyName = form.querySelector('[name="propertyName"]')?.value || "una propiedad";
+  const propertyId = form.querySelector('[name="propertyId"]')?.value || "";
+  const name = form.querySelector('[name="name"]')?.value.trim() || "";
+  const text = `Hola, me interesa ${propertyName}${propertyId ? ` (${propertyId})` : ""}.${name ? ` Mi nombre es ${name}.` : ""} ¿Me pueden compartir más información?`;
+  const number = (localStorage.getItem(whatsappStorageKey) || defaultWhatsappNumber).replace(/\D/g, "");
+  window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+}
+document.querySelector("#leadWhatsApp")?.addEventListener("click", openLeadWhatsApp);
+
+async function loadPublicLeadsInbox() {
+  const list = document.querySelector("#publicLeadsList");
+  if (!list || !window.rpmDb) return;
+  const summary = document.querySelector("#interestSummary");
+  try {
+    const snap = await window.rpmDb.collection("publicLeads").orderBy("createdAt", "desc").limit(50).get();
+    const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    document.querySelector("#interestBadge") && (document.querySelector("#interestBadge").textContent = String(rows.filter(x=>x.status==="nuevo").length));
+    if (summary) summary.textContent = `${rows.length} solicitudes · ${rows.filter(x=>x.status==="nuevo").length} nuevas`;
+    if (!rows.length) { list.innerHTML = '<div class="empty-state glass-panel"><h3>Sin solicitudes todavía</h3><p>Los nuevos interesados del portal aparecerán aquí.</p></div>'; return; }
+    list.innerHTML = rows.map(lead => `<article class="public-lead-row glass-panel"><div><strong>${escapeHtml(lead.name||"Sin nombre")}</strong><small>${escapeHtml(lead.phone||"")} ${lead.email ? `· ${escapeHtml(lead.email)}` : ""}</small></div><div><span class="tag blue">${escapeHtml(lead.propertyName||"Consulta general")}</span><small>${escapeHtml(lead.message||"")}</small></div><div><strong>${escapeHtml(lead.preferredTime||"Cualquier horario")}</strong><small>${escapeHtml(lead.source||"portal")} · ${escapeHtml(lead.followUpStatus||"pendiente")}</small></div><button class="secondary-button lead-whatsapp-admin" data-phone="${escapeHtml(lead.phone||"")}" data-property="${escapeHtml(lead.propertyName||"")}">WhatsApp</button></article>`).join("");
+    list.querySelectorAll('.lead-whatsapp-admin').forEach(btn=>btn.addEventListener('click',()=>{const phone=(btn.dataset.phone||'').replace(/\D/g,'');const msg=`Hola, te contactamos por tu interés en ${btn.dataset.property||'nuestra propiedad'}.`;window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer')}));
+  } catch (error) { console.error("Lead inbox error", error); if(summary) summary.textContent="No se pudieron cargar las solicitudes"; }
+}
+document.querySelector("#refreshInterests")?.addEventListener("click", loadPublicLeadsInbox);
+document.querySelector('[data-panel="interestsPanel"]')?.addEventListener("click", loadPublicLeadsInbox);
+
+document.querySelector("#heroContact")?.addEventListener("click", () => openLeadModal());
 document.querySelectorAll("[data-scroll]").forEach((button) => button.addEventListener("click", () => document.querySelector(`#${button.dataset.scroll}`).scrollIntoView({ behavior: "smooth" })));
-document.querySelector("#newLead").addEventListener("click", () => openLeadModal());
-document.querySelector("#newAction").addEventListener("click", () => showToast("Acciones rápidas disponibles en la siguiente versión."));
-document.querySelector("#logoutDemo").addEventListener("click", () => showToast("Sesión de demostración cerrada."));
+document.querySelector("#newLead")?.addEventListener("click", () => openLeadModal());
+document.querySelector("#newAction")?.addEventListener("click", () => showToast("Acciones rápidas disponibles en la siguiente versión."));
+document.querySelector("#logoutDemo")?.addEventListener("click", () => showToast("Sesión de demostración cerrada."));
 document.querySelectorAll(".map-pin").forEach((pin) => pin.addEventListener("click", () => showToast(`Zona seleccionada: ${pin.dataset.pin}`)));
-document.querySelector("#themeToggle").addEventListener("click", () => {
+document.querySelector("#themeToggle")?.addEventListener("click", () => {
   const nextTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
   localStorage.setItem(themeStorageKey, nextTheme);
   applyTheme();

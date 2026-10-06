@@ -58,3 +58,13 @@ V4.0: geolocalización, mapas y zonas.
 - Vincula cada solicitud pública con propertyId y propertyName.
 - Guarda solicitudes en Firestore `publicLeads` con origen, estado y fecha.
 - Mantiene mensaje contextual de la propiedad consultada.
+
+
+## V6.0 - Captación de interesados y WhatsApp
+- Formulario público vinculado a propertyId/propertyName.
+- Horario preferido, consentimiento, origen y estado de seguimiento.
+- Prevención de duplicados por teléfono normalizado + propiedad.
+- Botón de WhatsApp con mensaje precargado y referencia del inmueble.
+- Bandeja interna “Interesados” en el RPM para consultar solicitudes de publicLeads.
+- Acceso rápido de WhatsApp desde la bandeja interna.
+- Reglas Firestore actualizadas para la estructura V6.

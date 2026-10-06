@@ -23,8 +23,8 @@ service cloud.firestore {
 
     function validPublicLead() {
       return request.resource.data.keys().hasOnly([
-          'name', 'phone', 'email', 'message', 'propertyId', 'propertyName',
-          'source', 'status', 'createdAt'
+          'name', 'phone', 'normalizedPhone', 'email', 'message', 'propertyId', 'propertyName',
+          'preferredTime', 'consent', 'source', 'status', 'followUpStatus', 'repeatCount', 'createdAt', 'lastContactAt'
         ])
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 2
@@ -33,9 +33,13 @@ service cloud.firestore {
         && request.resource.data.phone.size() >= 7
         && request.resource.data.phone.size() <= 25
         && request.resource.data.propertyName is string
+        && request.resource.data.normalizedPhone is string
+        && request.resource.data.consent == true
         && request.resource.data.source == 'portal'
         && request.resource.data.status == 'nuevo'
-        && request.resource.data.createdAt is timestamp;
+        && request.resource.data.followUpStatus == 'pendiente'
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.lastContactAt is timestamp;
     }
 
     // Catálogo público: solo propiedades expresamente publicadas.

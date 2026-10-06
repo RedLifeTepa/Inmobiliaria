@@ -78,3 +78,7 @@ body:has(.modal-backdrop.open){overflow:hidden}
 .lead-property-context{border-radius:12px;background:var(--surface);box-shadow:var(--pressed-shadow);color:var(--primary);font-size:12px;font-weight:800;padding:11px 12px}
 #leadForm input[readonly]{color:var(--primary);font-weight:800;cursor:default}
 #leadForm button[disabled]{opacity:.65;cursor:wait}
+
+
+/* V6.0 - Captacion de interesados y WhatsApp */
+.lead-capture-modal{width:min(560px,100%)}.lead-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}.lead-help{display:block;color:var(--muted);margin-top:8px}.whatsapp-lead-button{color:#197253}.panel-subtitle{margin:5px 0 0;color:var(--muted);font-size:13px}.lead-inbox-toolbar{display:flex;justify-content:flex-end;color:var(--muted);font-size:12px;font-weight:750;margin-bottom:12px}.public-leads-list{display:grid;gap:10px}.public-lead-row{display:grid;grid-template-columns:1fr 1.4fr .8fr auto;gap:14px;align-items:center;padding:14px}.public-lead-row small{display:block;color:var(--muted);margin-top:5px}.public-lead-row .tag{width:max-content;max-width:100%}#leadForm select{border:0;border-radius:12px;background:var(--surface);box-shadow:var(--pressed-shadow);color:var(--ink);padding:11px 12px;width:100%}@media(max-width:800px){.public-lead-row{grid-template-columns:1fr}.lead-actions{grid-template-columns:1fr}}
