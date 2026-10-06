@@ -77,3 +77,15 @@ V4.0: geolocalización, mapas y zonas.
 - Historial de llamadas, WhatsApp, notas, citas, visitas y correo en `crmActivities`.
 - Contactos persistentes en Firestore `crmContacts`, con filtros y búsqueda.
 - Reglas Firestore actualizadas para ambas colecciones privadas.
+
+## V7.0.1 - Correccion responsive CRM
+- El CRM queda contenido dentro del area disponible del RPM.
+- Buscador y filtros se reorganizan segun el ancho de pantalla.
+- El boton Nuevo contacto baja de linea cuando es necesario.
+- El kanban conserva desplazamiento horizontal interno sin sacar la pagina del viewport.
+- Se mantiene intacta la funcionalidad Firebase/CRM de V7.0.
+
+
+## V7.0.2 - Ancla Estable CRM
+- Filtros del CRM (responsable y perfil) homologados al selector Liquid Glass reutilizable.
+- Conserva el ajuste responsive de V7.0.1.
