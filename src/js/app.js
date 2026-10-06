@@ -228,16 +228,16 @@ function renderProperties() {
         <span class="property-badge">${escapeHtml(property.operation||property.status||'Disponible')}</span><span class="property-view-chip">Ver ficha</span>
       </button>
       <div class="property-body"><span class="eyebrow">${escapeHtml(property.type||'Propiedad')} · ${escapeHtml(property.zone||'Zona por definir')}</span><h4>${escapeHtml(property.name)}</h4><p>${escapeHtml(property.meta||property.area||'Información disponible con asesor')}</p>
-        <div class="property-meta"><span class="property-price">${escapeHtml(property.price||'Precio a consultar')}</span><div class="property-card-actions"><button class="text-button property-detail-button" data-id="${escapeHtml(property.id)}">Ver detalle</button><button class="text-button interest-button" data-property="${escapeHtml(property.name)}">Me interesa →</button></div></div>
+        <div class="property-meta"><span class="property-price">${escapeHtml(property.price||'Precio a consultar')}</span><div class="property-card-actions"><button class="text-button property-detail-button" data-id="${escapeHtml(property.id)}">Ver detalle</button><button class="text-button interest-button" data-property="${escapeHtml(property.name)}" data-property-id="${escapeHtml(property.id)}">Me interesa →</button></div></div>
       </div></article>`).join("") : `<div class="empty-state glass-panel"><h3>No encontramos coincidencias</h3><p>Prueba con otra zona, operación, precio o tipo de inmueble.</p></div>`;
   document.querySelectorAll('.property-detail-button').forEach(b=>b.addEventListener('click',()=>openPublicPropertyDetail(b.dataset.id)));
-  document.querySelectorAll(".interest-button").forEach((button) => button.addEventListener("click", () => openLeadModal(button.dataset.property)));
+  document.querySelectorAll(".interest-button").forEach((button) => button.addEventListener("click", () => openLeadModal(button.dataset.property, button.dataset.propertyId)));
 }
 function openPublicPropertyDetail(id){
   const property=properties.find(p=>p.id===id); const modal=document.querySelector('#propertyDetailModal'),box=document.querySelector('#propertyDetailContent'); if(!property||!modal||!box)return;
   const location=property.locationPrivacy==='private'?'Ubicación reservada':property.locationPrivacy==='approximate'?`${property.zone||''} · ubicación aproximada`:[property.zone,property.municipality].filter(Boolean).join(', ');
-  box.innerHTML=`<div class="public-detail-cover" style="background-image:url('${normalizeImageUrl(property.imageUrl)}')"><span class="property-badge">${escapeHtml(property.operation||property.status||'Disponible')}</span></div><div class="public-detail-body"><span class="eyebrow">${escapeHtml(property.type||'Propiedad')}</span><h3>${escapeHtml(property.name)}</h3><p class="public-detail-location">⌖ ${escapeHtml(location||'Ubicación por definir')}</p><div class="public-detail-stats"><div><strong>${escapeHtml(property.area||property.meta||'—')}</strong><span>Superficie / datos</span></div><div><strong>${escapeHtml(property.bedrooms||'—')}</strong><span>Recámaras</span></div><div><strong>${escapeHtml(property.bathrooms||'—')}</strong><span>Baños</span></div><div><strong>${escapeHtml(property.status||'Disponible')}</strong><span>Disponibilidad</span></div></div><p>${escapeHtml(property.description||'Solicita información para conocer todos los detalles de esta propiedad.')}</p><div class="public-detail-footer"><strong>${escapeHtml(property.price||'Precio a consultar')}</strong><button class="primary-button detail-interest" data-property="${escapeHtml(property.name)}">Solicitar información</button></div></div>`;
-  modal.classList.add('open');modal.setAttribute('aria-hidden','false'); box.querySelector('.detail-interest')?.addEventListener('click',e=>{modal.classList.remove('open');openLeadModal(e.currentTarget.dataset.property)});
+  box.innerHTML=`<div class="public-detail-cover" style="background-image:url('${normalizeImageUrl(property.imageUrl)}')"><span class="property-badge">${escapeHtml(property.operation||property.status||'Disponible')}</span></div><div class="public-detail-body"><span class="eyebrow">${escapeHtml(property.type||'Propiedad')}</span><h3>${escapeHtml(property.name)}</h3><p class="public-detail-location">⌖ ${escapeHtml(location||'Ubicación por definir')}</p><div class="public-detail-stats"><div><strong>${escapeHtml(property.area||property.meta||'—')}</strong><span>Superficie / datos</span></div><div><strong>${escapeHtml(property.bedrooms||'—')}</strong><span>Recámaras</span></div><div><strong>${escapeHtml(property.bathrooms||'—')}</strong><span>Baños</span></div><div><strong>${escapeHtml(property.status||'Disponible')}</strong><span>Disponibilidad</span></div></div><p>${escapeHtml(property.description||'Solicita información para conocer todos los detalles de esta propiedad.')}</p><div class="public-detail-footer"><strong>${escapeHtml(property.price||'Precio a consultar')}</strong><button class="primary-button detail-interest" data-property="${escapeHtml(property.name)}" data-property-id="${escapeHtml(property.id)}">Solicitar información</button></div></div>`;
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false'); box.querySelector('.detail-interest')?.addEventListener('click',e=>{modal.classList.remove('open');openLeadModal(e.currentTarget.dataset.property, e.currentTarget.dataset.propertyId)});
 }
 function closePublicPropertyDetail(){const m=document.querySelector('#propertyDetailModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 
@@ -579,14 +579,25 @@ function showToast(message) {
   window.setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
-function openLeadModal(property = "") {
+function openLeadModal(property = "", propertyId = "") {
   const modal = document.querySelector("#leadModal");
-  const select = modal.querySelector("select[name=property]");
-  if (property && [...select.options].some((option) => option.text === property)) select.value = property;
+  if (!modal) return;
+  const form = modal.querySelector("#leadForm");
+  const propertyNameInput = form?.querySelector('[name="propertyName"]');
+  const propertyIdInput = form?.querySelector('[name="propertyId"]');
+  const context = modal.querySelector("#leadPropertyContext");
+  const matched = properties.find((item) => item.id === propertyId || item.name === property);
+  const resolvedName = matched?.name || property || "Consulta general";
+  const resolvedId = matched?.id || propertyId || "";
+  if (propertyNameInput) propertyNameInput.value = resolvedName;
+  if (propertyIdInput) propertyIdInput.value = resolvedId;
+  if (context) {
+    context.hidden = !property;
+    context.textContent = property ? `Solicitud vinculada a: ${resolvedName}${resolvedId ? ` · ${resolvedId}` : ""}` : "";
+  }
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
 }
-
 function closeModal() {
   const modal = document.querySelector("#leadModal");
   modal.classList.remove("open");
@@ -623,14 +634,32 @@ document.querySelector("#confirmDeleteDevelopment")?.addEventListener("click", c
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
 document.querySelector("#leadModal").addEventListener("click", (event) => { if (event.target.id === "leadModal") closeModal(); });
-document.querySelector("#leadForm").addEventListener("submit", (event) => {
+document.querySelector("#leadForm")?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const formData = new FormData(event.currentTarget);
-  const name = formData.get("name");
-  const property = formData.get("property");
-  closeModal();
-  event.currentTarget.reset();
-  showToast(`Interés registrado para ${name} en ${property}.`);
+  const form = event.currentTarget;
+  const formData = new FormData(form);
+  const name = String(formData.get("name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  const email = String(formData.get("email") || "").trim();
+  const propertyId = String(formData.get("propertyId") || "").trim();
+  const propertyName = String(formData.get("propertyName") || "Consulta general").trim();
+  const userMessage = String(formData.get("message") || "").trim();
+  const message = userMessage || `Solicito información sobre ${propertyName}${propertyId ? ` (${propertyId})` : ""}.`;
+  const lead = { name, phone, email, message, propertyId, propertyName, source: "portal", status: "nuevo" };
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Enviando…"; }
+  try {
+    if (!window.rpmDb) throw new Error("Firebase no está disponible");
+    await window.rpmDb.collection("publicLeads").add({ ...lead, createdAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+    closeModal();
+    form.reset();
+    showToast(`Interés registrado: ${propertyName}.`);
+  } catch (error) {
+    console.error("Lead save error", error);
+    showToast("No se pudo registrar la solicitud. Revisa la conexión con Firebase.");
+  } finally {
+    if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Enviar interés"; }
+  }
 });
 document.querySelector("#heroContact").addEventListener("click", () => openLeadModal());
 document.querySelectorAll("[data-scroll]").forEach((button) => button.addEventListener("click", () => document.querySelector(`#${button.dataset.scroll}`).scrollIntoView({ behavior: "smooth" })));

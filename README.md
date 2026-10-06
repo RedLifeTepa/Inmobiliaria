@@ -51,3 +51,10 @@ V4.0: geolocalización, mapas y zonas.
 - Selector de tipo del catálogo público migrado al componente Liquid Glass reutilizable.
 - Consistencia visual entre portal público y RPM.
 - Ajuste responsive del filtro del catálogo.
+
+
+## V5.0.1
+- Corrige la superposición del modal sobre filtros y navegación.
+- Vincula cada solicitud pública con propertyId y propertyName.
+- Guarda solicitudes en Firestore `publicLeads` con origen, estado y fecha.
+- Mantiene mensaje contextual de la propiedad consultada.
