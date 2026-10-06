@@ -68,3 +68,12 @@ V4.0: geolocalización, mapas y zonas.
 - Bandeja interna “Interesados” en el RPM para consultar solicitudes de publicLeads.
 - Acceso rápido de WhatsApp desde la bandeja interna.
 - Reglas Firestore actualizadas para la estructura V6.
+
+
+## V7.0 - CRM inmobiliario
+- Fichas de contactos con perfil, etapa, responsable, inmueble, fuente, preferencias y próxima acción.
+- Embudo de 7 etapas: Nuevo, Contactado, Calificado, Visita agendada, Negociación, Cerrado y Perdido.
+- Conversión de interesados V6 a CRM conservando propiedad y origen.
+- Historial de llamadas, WhatsApp, notas, citas, visitas y correo en `crmActivities`.
+- Contactos persistentes en Firestore `crmContacts`, con filtros y búsqueda.
+- Reglas Firestore actualizadas para ambas colecciones privadas.

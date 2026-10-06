@@ -72,6 +72,15 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
+    // CRM V7: fichas comerciales y actividades internas.
+    match /crmContacts/{contactId} {
+      allow read, write: if isStaff();
+    }
+
+    match /crmActivities/{activityId} {
+      allow read, write: if isStaff();
+    }
+
     match /operations/{operationId} {
       allow read, write: if isStaff();
     }
