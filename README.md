@@ -132,3 +132,12 @@ V4.0: geolocalización, mapas y zonas.
 - Plantillas editables para primer contacto, seguimiento, visita y recordatorio de pago con variables dinámicas.
 - Estado de integraciones y preparación para proveedor autorizado de WhatsApp Business.
 - En esta versión web la revisión se ejecuta al abrir el RPM o manualmente; la ejecución 24/7 se deja preparada para backend/servidor en V12.
+
+## V12.0 - Seguridad, respaldo y publicación final
+- Nuevo Centro de estabilidad en el RPM.
+- Diagnóstico de Firebase, sesión, HTTPS, desbordamiento responsive y colecciones críticas.
+- Exportación de respaldo lógico JSON de las colecciones accesibles.
+- Checklist persistente de publicación a producción.
+- Reglas Firestore/Storage mantienen denegación por defecto y control por roles.
+- La publicación oficial requiere servidor con HTTPS y reglas Firebase publicadas.
+- Después de V12 se realizará la auditoría integral funcional acordada antes de declarar producción definitiva.
