@@ -14,12 +14,12 @@ service cloud.firestore {
     function isStaff() {
       return userExists()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
-          in ['admin', 'direccion', 'asesor', 'cobranza', 'consulta'];
+          in ['admin', 'administrador', 'direccion', 'asesor', 'cobranza', 'consulta'];
     }
 
     function isAdmin() {
       return userExists()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'administrador'];
     }
 
     function validPublicLead() {

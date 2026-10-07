@@ -176,7 +176,7 @@ function initializeRpmAuth() {
         return;
       }
       const role = profile.data().role;
-      const allowedRoles = ["admin", "direccion", "asesor", "cobranza", "consulta"];
+      const allowedRoles = ["admin", "administrador", "direccion", "asesor", "cobranza", "consulta"];
       if (!allowedRoles.includes(role)) {
         errorBox.textContent = "Tu cuenta no tiene un rol autorizado para entrar al RPM.";
         await auth.signOut();
@@ -513,7 +513,7 @@ async function saveProperty(event) {
   };
   try {
     if (editingPropertyId) {
-      await window.rpmDb.collection("properties").doc(editingPropertyId).update(record);
+      await window.rpmDb.collection("properties").doc(editingPropertyId).set(record, { merge: true });
     } else {
       record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
       await window.rpmDb.collection("properties").add(record);
@@ -522,7 +522,7 @@ async function saveProperty(event) {
     await loadRpmProperties();
     showToast(editingPropertyId ? "Propiedad actualizada." : "Propiedad registrada.");
   } catch (error) {
-    showToast("No se pudo guardar la propiedad. Revisa tu rol y las reglas de Firestore.");
+    showToast(`No se pudo guardar la propiedad (${error.code || "Firestore"}). Revisa rol y reglas.`);
     console.error("Property save error", error);
   }
 }
@@ -532,13 +532,13 @@ async function togglePropertyPublication(propertyId) {
   if (!property || !window.rpmDb) return;
   const next = property.published === false;
   try {
-    await window.rpmDb.collection("properties").doc(propertyId).update({ published: next, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+    await window.rpmDb.collection("properties").doc(propertyId).set({ ...property, published: next, active: property.active !== false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
     property.published = next;
     renderRpmProperties();
     renderProperties();
     showToast(next ? "Propiedad visible en el portal." : "Propiedad ocultada del portal sin eliminarla.");
   } catch (error) {
-    showToast("No se pudo cambiar la visibilidad de la propiedad.");
+    showToast(`No se pudo cambiar la visibilidad (${error.code || "Firestore"}). Revisa reglas y rol.`);
     console.error("Property publication toggle error", error);
   }
 }
@@ -546,7 +546,8 @@ async function togglePropertyPublication(propertyId) {
 async function deleteProperty(propertyId) {
   if (!window.rpmDb || !propertyId || !window.confirm("¿Deseas desactivar esta propiedad del inventario?")) return;
   try {
-    await window.rpmDb.collection("properties").doc(propertyId).update({ active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+    const property = properties.find((item) => item.id === propertyId) || {};
+    await window.rpmDb.collection("properties").doc(propertyId).set({ ...property, active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
     await loadRpmProperties();
     showToast("Propiedad desactivada del inventario.");
   } catch (error) {

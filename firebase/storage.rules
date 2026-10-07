@@ -11,13 +11,13 @@ service firebase.storage {
       return signedIn()
         && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
-          in ['admin', 'direccion', 'asesor', 'cobranza', 'consulta'];
+          in ['admin', 'administrador', 'direccion', 'asesor', 'cobranza', 'consulta'];
     }
 
     function isAdmin() {
       return signedIn()
         && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'administrador'];
     }
 
     function validImage() {
