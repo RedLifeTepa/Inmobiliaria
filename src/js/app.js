@@ -339,7 +339,9 @@ async function loadDevelopments() {
     }
   } catch (error) {
     console.warn("Developments load fallback", error);
+    if (!developments.some((development) => development.id === demoDevelopment.id)) developments = [demoDevelopment, ...developments];
   }
+  if (!developments.length) developments = [demoDevelopment];
   renderDevelopments();
   refreshDevelopmentSelectors();
 }
@@ -358,9 +360,9 @@ function openDevelopmentModal(developmentId = "") {
   const form = document.querySelector("#developmentForm");
   if (!modal || !form) return;
   const development = developments.find((item) => item.id === developmentId);
-  editingDevelopmentId = development && !development.demo ? developmentId : null;
+  editingDevelopmentId = development ? developmentId : null;
   form.reset();
-  if (development && !development.demo) {
+  if (development) {
     ["name", "type", "city", "location", "zoneId", "latitude", "longitude", "locationPrivacy", "price", "units", "suites", "amenitiesCount", "coverUrl", "description"].forEach((field) => { if (form.elements[field] && development[field] !== undefined) form.elements[field].value = development[field]; });
     form.elements.amenities.value = Array.isArray(development.amenities) ? development.amenities.join(", ") : development.amenities || "";
     form.elements.published.checked = Boolean(development.published);
@@ -377,8 +379,15 @@ async function saveDevelopment(event) {
   const data = Object.fromEntries(new FormData(form).entries());
   const record = { name: data.name.trim(), type: data.type, city: data.city.trim(), location: data.location.trim(), zoneId: data.zoneId || "", latitude: data.latitude ? Number(data.latitude) : null, longitude: data.longitude ? Number(data.longitude) : null, locationPrivacy: data.locationPrivacy || "exact", price: data.price.trim(), units: Number(data.units || 0), suites: Number(data.suites || 0), amenitiesCount: Number(data.amenitiesCount || 0), coverUrl: data.coverUrl.trim(), description: data.description.trim(), amenities: data.amenities.split(",").map((item) => item.trim()).filter(Boolean), published: form.elements.published.checked, active: true, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() };
   try {
-    if (editingDevelopmentId) await window.rpmDb.collection("developments").doc(editingDevelopmentId).update(record);
-    else { record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp(); await window.rpmDb.collection("developments").add(record); }
+    if (editingDevelopmentId) {
+      const ref = window.rpmDb.collection("developments").doc(editingDevelopmentId);
+      const snap = await ref.get();
+      if (!snap.exists) record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
+      await ref.set(record, { merge: true });
+    } else {
+      record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
+      await window.rpmDb.collection("developments").add(record);
+    }
     closeDevelopmentModal();
     await loadDevelopments();
     showToast(editingDevelopmentId ? "Desarrollo actualizado." : "Desarrollo creado.");
@@ -838,6 +847,11 @@ async function saveUnit(e){e.preventDefault();if(!window.rpmDb){showToast('Fireb
 async function saveDemoUnit(id){const u=developmentUnits.find(x=>x.id===id);if(!u||!window.rpmDb)return;const dev=developments.find(d=>(d.name||'').includes('TERRASER'));if(!dev||dev.demo){showToast('Primero guarda TERRASER en Firebase para asociar sus unidades.');return}const {id:_,demo,...rec}=u;rec.developmentId=dev.id;rec.active=true;rec.createdAt=window.firebase.firestore.FieldValue.serverTimestamp();rec.updatedAt=rec.createdAt;await window.rpmDb.collection('developmentUnits').add(rec);showToast(`${u.name} guardada en Firebase.`);await loadDevelopmentUnits(dev.id)}
 async function deactivateUnit(id){if(!window.rpmDb||!confirm('¿Desactivar esta unidad? No se eliminará físicamente.'))return;await window.rpmDb.collection('developmentUnits').doc(id).update({active:false,updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()});await loadDevelopmentUnits(document.querySelector('#unitDevelopmentFilter').value);showToast('Unidad desactivada.');}
 
+document.querySelector('#editSelectedDevelopment')?.addEventListener('click',()=>{
+  const developmentId=document.querySelector('#unitDevelopmentFilter')?.value || '';
+  if(!developmentId){showToast('Selecciona primero un desarrollo.');return;}
+  openDevelopmentModal(developmentId);
+});
 document.querySelector('#newDevelopmentUnit')?.addEventListener('click',()=>openUnitModal());
 document.querySelector('#unitDevelopmentFilter')?.addEventListener('change',e=>loadDevelopmentUnits(e.target.value));
 document.querySelector('#unitStatusFilter')?.addEventListener('change',renderDevelopmentUnits);
