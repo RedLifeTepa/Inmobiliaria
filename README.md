@@ -96,3 +96,24 @@ V4.0: geolocalización, mapas y zonas.
 - Expediente operativo con checklist documental y trazabilidad de cambios.
 - Cierre de operación actualiza el contacto CRM a Cliente efectivo / Cerrado.
 - Colección Firestore: `operations` (requiere publicar las reglas incluidas).
+
+
+## V8.0.1 - Selectores Liquid Glass
+- Homologa los filtros de tipo de movimiento y estado del modulo Operaciones con el componente Liquid Glass reutilizable.
+- Conserva la logica de filtrado y el comportamiento responsive de V8.0.
+
+## V9.0 - Cobranza, abonos, deudas y saldos
+- Cuentas por cobrar vinculadas a operaciones V8.
+- Registro de abonos con fecha, método, referencia y notas.
+- Cálculo de saldo y recargos.
+- Semáforo: Pendiente, Parcial, Pagado, Vencido y Bloqueado.
+- Filtros de cartera y vencimientos.
+- Estado de cuenta e historial de abonos.
+- Reglas Firestore para `collectionPayments`.
+
+## V10.0 - Dashboard, indicadores y reportes
+- Dashboard ejecutivo conectado a Firestore para inventario, CRM, operaciones y cobranza.
+- Indicadores de inventario activo, prospectos, operaciones cerradas, importe operado y cartera pendiente.
+- Visualizaciones de embudo CRM, tipo de operación, estado de cartera y distribución del inventario.
+- Centro de reportes con filtros por periodo y responsable.
+- Productividad por responsable y exportación de resumen operativo a CSV.

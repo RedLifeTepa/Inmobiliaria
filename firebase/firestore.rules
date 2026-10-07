@@ -86,7 +86,12 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
+    // V9: cuentas por cobrar y abonos.
     match /collections/{collectionId} {
+      allow read, write: if isStaff();
+    }
+
+    match /collectionPayments/{paymentId} {
       allow read, write: if isStaff();
     }
 
