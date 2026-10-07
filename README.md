@@ -117,3 +117,18 @@ V4.0: geolocalización, mapas y zonas.
 - Visualizaciones de embudo CRM, tipo de operación, estado de cartera y distribución del inventario.
 - Centro de reportes con filtros por periodo y responsable.
 - Productividad por responsable y exportación de resumen operativo a CSV.
+
+
+## V10.0.1 - Homologacion visual de selectores
+- Cobranza: estado y vencimiento usan el componente Liquid Glass.
+- Dashboard y Reportes: periodo y responsable usan el mismo componente.
+- Inventario: estado usa el mismo componente.
+- Se conserva la logica nativa de los selectores como fuente de verdad para filtros y Firebase.
+
+## V11.0 - Automatizaciones e integraciones
+- Centro de automatizaciones dentro del RPM.
+- Reglas configurables para próximas acciones CRM, vencimientos de cobranza y documentos pendientes en operaciones.
+- Bandeja consolidada de alertas con acceso contextual a WhatsApp.
+- Plantillas editables para primer contacto, seguimiento, visita y recordatorio de pago con variables dinámicas.
+- Estado de integraciones y preparación para proveedor autorizado de WhatsApp Business.
+- En esta versión web la revisión se ejecuta al abrir el RPM o manualmente; la ejecución 24/7 se deja preparada para backend/servidor en V12.
