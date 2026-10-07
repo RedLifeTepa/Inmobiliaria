@@ -12,7 +12,7 @@ let properties = [
 const localAssetPrefix = window.location.pathname.includes("/rpm/") ? "../" : "";
 
 const demoDevelopment = {
-  id: "demo-terraser",
+  id: "terraser-demo",
   name: "TERRASER Residencias & Hotel",
   type: "Mixto",
   city: "Tepatitlán",
@@ -271,8 +271,9 @@ function renderRpmProperties() {
       <td>${escapeHtml(property.operation || property.status)} · ${escapeHtml(property.price)}</td>
       <td><strong>${escapeHtml(property.owner || "Sin propietario")}</strong><small>${escapeHtml(property.advisor || "Sin asesor")}</small></td>
       <td><span class="tag ${propertyTagClass(property.status)}">${escapeHtml(property.status)}</span></td>
-      <td><div class="row-actions"><button class="text-button edit-property" data-id="${escapeHtml(property.id)}">Editar</button><button class="text-button delete-property" data-id="${escapeHtml(property.id)}">Desactivar</button></div></td>
+      <td><div class="row-actions"><button class="visibility-switch ${property.published !== false ? "is-on" : ""}" data-property-visibility="${escapeHtml(property.id)}" role="switch" aria-checked="${property.published !== false}" title="${property.published !== false ? "Visible en portal" : "Oculta en portal"}"><span></span><b>${property.published !== false ? "Visible" : "Oculta"}</b></button><button class="text-button edit-property" data-id="${escapeHtml(property.id)}">Editar</button><button class="text-button delete-property" data-id="${escapeHtml(property.id)}">Desactivar</button></div></td>
     </tr>`).join("") : `<tr><td colspan="7"><div class="empty-state"><h3>No hay propiedades con esos filtros</h3><p>Registra un inmueble nuevo o modifica la búsqueda.</p></div></td></tr>`;
+  body.querySelectorAll("[data-property-visibility]").forEach((button) => button.addEventListener("click", () => togglePropertyPublication(button.dataset.propertyVisibility)));
   body.querySelectorAll(".edit-property").forEach((button) => button.addEventListener("click", () => openPropertyModal(button.dataset.id)));
   body.querySelectorAll(".delete-property").forEach((button) => button.addEventListener("click", () => deleteProperty(button.dataset.id)));
 }
@@ -280,7 +281,7 @@ function renderRpmProperties() {
 function renderDevelopmentCard(development, mode) {
   const cover = normalizeImageUrl(development.coverUrl) || `${localAssetPrefix}assets/terraser-cover.png`;
   const amenities = Array.isArray(development.amenities) ? development.amenities : String(development.amenities || "").split(",").map((item) => item.trim()).filter(Boolean);
-  const actions = mode === "rpm" ? `<div class="development-actions">${development.demo ? `<button class="secondary-button save-demo-development" data-id="${escapeHtml(development.id)}">Guardar en Firebase</button>` : `<button class="text-button edit-development" data-id="${escapeHtml(development.id)}">Editar</button><button class="text-button toggle-development" data-id="${escapeHtml(development.id)}">${development.published ? "Ocultar" : "Publicar"}</button><button class="text-button delete-development" data-id="${escapeHtml(development.id)}">Desactivar</button>`}</div>` : "";
+  const actions = mode === "rpm" ? `<div class="development-actions"><button class="visibility-switch ${development.published ? "is-on" : ""}" data-development-visibility="${escapeHtml(development.id)}" role="switch" aria-checked="${Boolean(development.published)}" title="${development.published ? "Visible en portal" : "Oculto en portal"}"><span></span><b>${development.published ? "Visible" : "Oculto"}</b></button><button class="text-button edit-development" data-id="${escapeHtml(development.id)}">Editar</button><button class="text-button delete-development" data-id="${escapeHtml(development.id)}">Desactivar</button></div>` : "";
   return `<article class="development-card glass-panel"><div class="development-cover" style="background-image:url('${escapeHtml(cover)}')"><span class="development-cover-label">${escapeHtml(development.name)}</span></div><div class="development-body"><div class="development-intro"><div><span class="eyebrow">${escapeHtml(development.city || "Ubicación pendiente")}</span><h3>${escapeHtml(development.type || "Desarrollo")}</h3><p>${escapeHtml(development.description)}</p></div><div class="development-price"><small>Precio inicial</small><strong>${escapeHtml(development.price || "Por definir")}</strong><span>${development.published ? "Publicado" : "Borrador"}</span></div></div><div class="development-stats"><div><strong>${escapeHtml(development.units || 0)}</strong><span>Unidades</span></div><div><strong>${escapeHtml(development.suites || 0)}</strong><span>Suites</span></div><div><strong>${escapeHtml(development.amenitiesCount || amenities.length)}</strong><span>Amenidades</span></div><div><strong>${escapeHtml(development.location || "-")}</strong><span>Ubicación</span></div></div><div class="development-columns"><div><span class="eyebrow">AMENIDADES</span><h4>Servicios destacados</h4><ul class="development-list">${amenities.map((amenity) => `<li>${escapeHtml(amenity)}</li>`).join("") || "<li>Por definir</li>"}</ul></div><div><span class="eyebrow">PUBLICACIÓN</span><h4>${development.published ? "Visible para clientes" : "Solo interno"}</h4><p class="panel-description">${development.demo ? "Ficha de ejemplo basada en el dossier del cliente." : "Registro administrado desde Firebase."}</p></div></div>${actions}</div></article>`;
 }
 
@@ -294,7 +295,7 @@ function renderDevelopments() {
     publicGrid.innerHTML = published.map((development) => renderDevelopmentCard(development, "public")).join("") || `<div class="empty-state glass-panel"><h3>Próximamente</h3><p>Estamos preparando nuevos desarrollos inmobiliarios.</p></div>`;
   }
   if (rpmGrid) rpmGrid.innerHTML = active.map((development) => renderDevelopmentCard(development, "rpm")).join("");
-  document.querySelectorAll(".save-demo-development").forEach((button) => button.addEventListener("click", () => saveDemoDevelopment(button.dataset.id)));
+  document.querySelectorAll("[data-development-visibility]").forEach((button) => button.addEventListener("click", () => toggleDevelopment(button.dataset.developmentVisibility)));
   document.querySelectorAll(".manage-development-units").forEach((button) => button.addEventListener("click", () => selectDevelopmentUnits(button.dataset.id)));
   document.querySelectorAll(".edit-development").forEach((button) => button.addEventListener("click", () => openDevelopmentModal(button.dataset.id)));
   document.querySelectorAll(".toggle-development").forEach((button) => button.addEventListener("click", () => toggleDevelopment(button.dataset.id)));
@@ -318,10 +319,19 @@ function renderDevelopmentDashboard(activeDevelopments = developments.filter((de
 async function loadDevelopments() {
   if (!window.rpmDb) { renderDevelopments(); return; }
   try {
-    const query = document.body.classList.contains("confi-mode") ? window.rpmDb.collection("developments").get() : window.rpmDb.collection("developments").where("published", "==", true).where("active", "==", true).get();
+    const isAdmin = document.body.classList.contains("confi-mode");
+    if (isAdmin) {
+      const demoRef = window.rpmDb.collection("developments").doc("terraser-demo");
+      const demoSnap = await demoRef.get();
+      if (!demoSnap.exists) {
+        const { id, demo, ...seed } = demoDevelopment;
+        await demoRef.set({ ...seed, createdAt: window.firebase.firestore.FieldValue.serverTimestamp(), updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      }
+    }
+    const query = isAdmin ? window.rpmDb.collection("developments").get() : window.rpmDb.collection("developments").where("published", "==", true).where("active", "==", true).get();
     const snapshot = await query;
     if (!snapshot.empty) {
-      const records = snapshot.docs.map((document) => ({ id: document.id, active: document.data().active !== false, ...document.data() }));
+      const records = snapshot.docs.map((document) => ({ id: document.id, active: document.data().active !== false, demo: false, ...document.data() }));
       const terraserExists = records.some((development) => development.id === "terraser-demo" || development.name === demoDevelopment.name);
       developments = terraserExists ? records : [demoDevelopment, ...records];
     } else {
@@ -505,6 +515,22 @@ async function saveProperty(event) {
   } catch (error) {
     showToast("No se pudo guardar la propiedad. Revisa tu rol y las reglas de Firestore.");
     console.error("Property save error", error);
+  }
+}
+
+async function togglePropertyPublication(propertyId) {
+  const property = properties.find((item) => item.id === propertyId);
+  if (!property || !window.rpmDb) return;
+  const next = property.published === false;
+  try {
+    await window.rpmDb.collection("properties").doc(propertyId).update({ published: next, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+    property.published = next;
+    renderRpmProperties();
+    renderProperties();
+    showToast(next ? "Propiedad visible en el portal." : "Propiedad ocultada del portal sin eliminarla.");
+  } catch (error) {
+    showToast("No se pudo cambiar la visibilidad de la propiedad.");
+    console.error("Property publication toggle error", error);
   }
 }
 
