@@ -89,3 +89,10 @@ V4.0: geolocalización, mapas y zonas.
 ## V7.0.2 - Ancla Estable CRM
 - Filtros del CRM (responsable y perfil) homologados al selector Liquid Glass reutilizable.
 - Conserva el ajuste responsive de V7.0.1.
+
+## V8.0 - Operaciones y expedientes
+- Apartados, ventas y rentas vinculados con contactos del CRM.
+- Estado, responsable, fecha, importe, comisión y condiciones por operación.
+- Expediente operativo con checklist documental y trazabilidad de cambios.
+- Cierre de operación actualiza el contacto CRM a Cliente efectivo / Cerrado.
+- Colección Firestore: `operations` (requiere publicar las reglas incluidas).

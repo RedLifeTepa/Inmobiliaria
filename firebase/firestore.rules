@@ -81,6 +81,7 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
+    // V8: operaciones y expedientes inmobiliarios.
     match /operations/{operationId} {
       allow read, write: if isStaff();
     }
