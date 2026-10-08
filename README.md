@@ -141,3 +141,14 @@ V4.0: geolocalización, mapas y zonas.
 - Reglas Firestore/Storage mantienen denegación por defecto y control por roles.
 - La publicación oficial requiere servidor con HTTPS y reglas Firebase publicadas.
 - Después de V12 se realizará la auditoría integral funcional acordada antes de declarar producción definitiva.
+
+
+## V12.0.4 - Propiedades: sincronización pública segura
+- `properties` queda como inventario privado del RPM.
+- `publicProperties` queda como catálogo público sanitizado.
+- Crear/editar/publicar/ocultar/desactivar sincroniza automáticamente ambas colecciones.
+- El portal público carga exclusivamente `publicProperties`.
+- No se publican propietario, asesor, documentos ni datos administrativos.
+- Ubicación privada no expone zona, municipio ni coordenadas; ubicación exacta puede publicar coordenadas.
+- Se normalizan los inmuebles demostrativos al modelo operación/estado/activo/visible.
+- No requiere Firebase Storage.

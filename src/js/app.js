@@ -1,12 +1,12 @@
 let properties = [
-  { id: "RPM-1001", name: "Casa Encino", type: "Casa", zone: "Mirador del Valle, Tepatitlán", price: "$2,850,000", meta: "3 recámaras · 2 baños", status: "Venta", imageUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80" },
-  { id: "RPM-1002", name: "Terreno Los Olivos", type: "Terreno", zone: "Los Olivos, Tepatitlán", price: "$980,000", meta: "420 m² · servicios", status: "Venta", imageUrl: "https://assets.easybroker.com/property_images/4488694/75166387/EB-QF8694.jpeg?version=1715970199" },
-  { id: "RPM-1003", name: "Casa Centro", type: "Casa", zone: "Centro, Tepatitlán", price: "$12,500 / mes", meta: "2 recámaras · amueblada", status: "Renta", imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80" },
-  { id: "RPM-1004", name: "Lote La Hacienda", type: "Terreno", zone: "La Hacienda, Arandas", price: "$735,000", meta: "250 m² · acceso controlado", status: "Venta", imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80" },
-  { id: "RPM-1005", name: "Residencia Los Altos", type: "Casa", zone: "El Carmen, San Juan de los Lagos", price: "$4,250,000", meta: "4 recámaras · jardín", status: "Venta", imageUrl: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&q=80" },
-  { id: "RPM-1006", name: "Terreno El Refugio", type: "Terreno", zone: "El Refugio, Tepatitlán", price: "$1,420,000", meta: "600 m² · esquina", status: "Publicado", imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&q=80" },
-  { id: "RPM-1007", name: "Casa Campestre", type: "Casa", zone: "Capilla de Guadalupe", price: "$2,180,000", meta: "3 recámaras · terraza", status: "Venta", imageUrl: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200&q=80" },
-  { id: "RPM-1008", name: "Lote Vista Norte", type: "Terreno", zone: "Vista Hermosa, Tepatitlán", price: "$1,050,000", meta: "360 m² · vista panorámica", status: "Apartado", imageUrl: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80" },
+  { id: "RPM-1001", name: "Casa Encino", type: "Casa", zone: "Mirador del Valle, Tepatitlán", price: "$2,850,000", meta: "3 recámaras · 2 baños", operation: "Venta", status: "Disponible", published: true, active: true, imageUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80" },
+  { id: "RPM-1002", name: "Terreno Los Olivos", type: "Terreno", zone: "Los Olivos, Tepatitlán", price: "$980,000", meta: "420 m² · servicios", operation: "Venta", status: "Disponible", published: true, active: true, imageUrl: "https://assets.easybroker.com/property_images/4488694/75166387/EB-QF8694.jpeg?version=1715970199" },
+  { id: "RPM-1003", name: "Casa Centro", type: "Casa", zone: "Centro, Tepatitlán", price: "$12,500 / mes", meta: "2 recámaras · amueblada", operation: "Renta", status: "Disponible", published: true, active: true, imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80" },
+  { id: "RPM-1004", name: "Lote La Hacienda", type: "Terreno", zone: "La Hacienda, Arandas", price: "$735,000", meta: "250 m² · acceso controlado", operation: "Venta", status: "Disponible", published: true, active: true, imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80" },
+  { id: "RPM-1005", name: "Residencia Los Altos", type: "Casa", zone: "El Carmen, San Juan de los Lagos", price: "$4,250,000", meta: "4 recámaras · jardín", operation: "Venta", status: "Disponible", published: true, active: true, imageUrl: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&q=80" },
+  { id: "RPM-1006", name: "Terreno El Refugio", type: "Terreno", zone: "El Refugio, Tepatitlán", price: "$1,420,000", meta: "600 m² · esquina", operation: "Venta", status: "Publicado", published: true, active: true, imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&q=80" },
+  { id: "RPM-1007", name: "Casa Campestre", type: "Casa", zone: "Capilla de Guadalupe", price: "$2,180,000", meta: "3 recámaras · terraza", operation: "Venta", status: "Disponible", published: true, active: true, imageUrl: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200&q=80" },
+  { id: "RPM-1008", name: "Lote Vista Norte", type: "Terreno", zone: "Vista Hermosa, Tepatitlán", price: "$1,050,000", meta: "360 m² · vista panorámica", operation: "Venta", status: "Apartado", published: true, active: true, imageUrl: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80" },
 ];
 
 const localAssetPrefix = window.location.pathname.includes("/rpm/") ? "../" : "";
@@ -238,7 +238,7 @@ function renderProperties() {
 function openPublicPropertyDetail(id){
   const property=properties.find(p=>p.id===id); const modal=document.querySelector('#propertyDetailModal'),box=document.querySelector('#propertyDetailContent'); if(!property||!modal||!box)return;
   const location=property.locationPrivacy==='private'?'Ubicación reservada':property.locationPrivacy==='approximate'?`${property.zone||''} · ubicación aproximada`:[property.zone,property.municipality].filter(Boolean).join(', ');
-  box.innerHTML=`<div class="public-detail-cover" style="background-image:url('${normalizeImageUrl(property.imageUrl)}')"><span class="property-badge">${escapeHtml(property.operation||property.status||'Disponible')}</span></div><div class="public-detail-body"><span class="eyebrow">${escapeHtml(property.type||'Propiedad')}</span><h3>${escapeHtml(property.name)}</h3><p class="public-detail-location">⌖ ${escapeHtml(location||'Ubicación por definir')}</p><div class="public-detail-stats"><div><strong>${escapeHtml(property.area||property.meta||'—')}</strong><span>Superficie / datos</span></div><div><strong>${escapeHtml(property.bedrooms||'—')}</strong><span>Recámaras</span></div><div><strong>${escapeHtml(property.bathrooms||'—')}</strong><span>Baños</span></div><div><strong>${escapeHtml(property.status||'Disponible')}</strong><span>Disponibilidad</span></div></div><p>${escapeHtml(property.description||'Solicita información para conocer todos los detalles de esta propiedad.')}</p><div class="public-detail-footer"><strong>${escapeHtml(property.price||'Precio a consultar')}</strong><button class="primary-button detail-interest" data-property="${escapeHtml(property.name)}" data-property-id="${escapeHtml(property.id)}">Solicitar información</button></div></div>`;
+  box.innerHTML=`<div class="public-detail-cover" style="background-image:url('${normalizeImageUrl(property.imageUrl)}')"><span class="property-badge">${escapeHtml(property.operation||property.status||'Disponible')}</span></div><div class="public-detail-body"><span class="eyebrow">${escapeHtml(property.type||'Propiedad')}</span><h3>${escapeHtml(property.name)}</h3><p class="public-detail-location">⌖ ${escapeHtml(location||'Ubicación por definir')}</p><div class="public-detail-stats"><div><strong>${escapeHtml(property.area||property.meta||'—')}</strong><span>Superficie / datos</span></div><div><strong>${escapeHtml(property.rooms||property.bedrooms||'—')}</strong><span>Recámaras</span></div><div><strong>${escapeHtml(property.baths||property.bathrooms||'—')}</strong><span>Baños</span></div><div><strong>${escapeHtml(property.status||'Disponible')}</strong><span>Disponibilidad</span></div></div><p>${escapeHtml(property.description||'Solicita información para conocer todos los detalles de esta propiedad.')}</p><div class="public-detail-footer"><strong>${escapeHtml(property.price||'Precio a consultar')}</strong><button class="primary-button detail-interest" data-property="${escapeHtml(property.name)}" data-property-id="${escapeHtml(property.id)}">Solicitar información</button></div></div>`;
   modal.classList.add('open');modal.setAttribute('aria-hidden','false'); box.querySelector('.detail-interest')?.addEventListener('click',e=>{modal.classList.remove('open');openLeadModal(e.currentTarget.dataset.property, e.currentTarget.dataset.propertyId)});
 }
 function closePublicPropertyDetail(){const m=document.querySelector('#propertyDetailModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
@@ -452,9 +452,92 @@ async function confirmDeleteDevelopment() {
 
 function deleteDevelopment(developmentId) { openDeleteDevelopmentModal(developmentId); }
 
+function publicPropertyRecord(property = {}) {
+  const privacy = property.locationPrivacy || "exact";
+  const record = {
+    sourceId: property.id || "",
+    name: property.name || "",
+    type: property.type || "Propiedad",
+    operation: property.operation || "Venta",
+    price: property.price || "",
+    zone: privacy === "private" ? "" : (property.zone || ""),
+    municipality: privacy === "private" ? "" : (property.municipality || ""),
+    area: property.area || property.meta || "",
+    meta: property.meta || property.area || "",
+    rooms: Number(property.rooms ?? property.bedrooms ?? 0),
+    baths: Number(property.baths ?? property.bathrooms ?? 0),
+    status: property.status || "Disponible",
+    imageUrl: property.imageUrl || "",
+    gallery: Array.isArray(property.gallery) ? property.gallery : [],
+    description: property.description || "",
+    services: property.services || "",
+    features: property.features || "",
+    locationPrivacy: privacy,
+    published: true,
+    active: true,
+    updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  // Nunca enviamos propietario, asesor, documentos ni otros datos administrativos.
+  // Las coordenadas solo se publican cuando el administrador eligió ubicación exacta.
+  if (privacy === "exact" && Number.isFinite(Number(property.latitude)) && Number.isFinite(Number(property.longitude))) {
+    record.latitude = Number(property.latitude);
+    record.longitude = Number(property.longitude);
+  }
+  return record;
+}
+
+async function syncPublicProperty(propertyId, property) {
+  if (!window.rpmDb || !propertyId) return;
+  const publicRef = window.rpmDb.collection("publicProperties").doc(propertyId);
+  const shouldPublish = property && publicPropertyVisible(property);
+  if (shouldPublish) {
+    await publicRef.set(publicPropertyRecord({ id: propertyId, ...property }), { merge: false });
+  } else {
+    const snap = await publicRef.get();
+    if (snap.exists) await publicRef.delete();
+  }
+}
+
+async function reconcilePublicProperties(list = properties) {
+  if (!window.rpmDb) return;
+  const activeIds = new Set(list.filter(publicPropertyVisible).map((p) => p.id));
+  await Promise.all(list.map((property) => syncPublicProperty(property.id, property)));
+  // Limpia publicaciones huérfanas creadas por versiones anteriores.
+  const publicSnap = await window.rpmDb.collection("publicProperties").get();
+  await Promise.all(publicSnap.docs.filter((doc) => !activeIds.has(doc.id)).map((doc) => doc.ref.delete()));
+}
+
+async function ensureDemoPropertiesInFirestore() {
+  if (!window.rpmDb || !document.body.classList.contains("confi-mode")) return;
+  const demoIds = new Set(["RPM-1001","RPM-1002","RPM-1003","RPM-1004","RPM-1005","RPM-1006","RPM-1007","RPM-1008"]);
+  const demoRows = properties.filter((p) => demoIds.has(p.id));
+  for (const property of demoRows) {
+    const ref = window.rpmDb.collection("properties").doc(property.id);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      await ref.set({ ...property, createdAt: window.firebase.firestore.FieldValue.serverTimestamp(), updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    }
+  }
+}
+
+async function loadPublicProperties() {
+  if (!window.rpmDb || document.body.classList.contains("confi-mode") || !propertyGrid) return;
+  try {
+    const snapshot = await window.rpmDb.collection("publicProperties").get();
+    properties = snapshot.docs.map((document) => ({ id: document.id, ...document.data(), active: true, published: true }));
+    renderProperties();
+  } catch (error) {
+    properties = [];
+    renderProperties();
+    showToast("No se pudo cargar el catálogo público. Revisa la conexión o las reglas de Firestore.");
+    console.error("Public properties load error", error);
+  }
+}
+
 async function loadRpmProperties() {
   if (!window.rpmDb || !document.querySelector("#rpmPropertiesBody")) return;
   try {
+    await ensureDemoPropertiesInFirestore();
     const snapshot = await window.rpmDb.collection("properties").get();
     if (snapshot.empty) {
       renderRpmProperties();
@@ -462,6 +545,7 @@ async function loadRpmProperties() {
     }
     properties = snapshot.docs.map((document) => ({ id: document.id, active: document.data().active !== false, ...document.data() }));
     renderRpmProperties();
+    await reconcilePublicProperties(properties);
     showToast(`${properties.length} propiedades cargadas desde Firebase.`);
   } catch (error) {
     renderRpmProperties();
@@ -512,12 +596,15 @@ async function saveProperty(event) {
     updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
   };
   try {
+    let savedPropertyId = editingPropertyId;
     if (editingPropertyId) {
       await window.rpmDb.collection("properties").doc(editingPropertyId).set(record, { merge: true });
     } else {
       record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
-      await window.rpmDb.collection("properties").add(record);
+      const created = await window.rpmDb.collection("properties").add(record);
+      savedPropertyId = created.id;
     }
+    await syncPublicProperty(savedPropertyId, { id: savedPropertyId, ...record });
     closePropertyModal();
     await loadRpmProperties();
     showToast(editingPropertyId ? "Propiedad actualizada." : "Propiedad registrada.");
@@ -532,7 +619,9 @@ async function togglePropertyPublication(propertyId) {
   if (!property || !window.rpmDb) return;
   const next = property.published === false;
   try {
-    await window.rpmDb.collection("properties").doc(propertyId).set({ ...property, published: next, active: property.active !== false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    const updatedProperty = { ...property, published: next, active: property.active !== false };
+    await window.rpmDb.collection("properties").doc(propertyId).set({ ...updatedProperty, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await syncPublicProperty(propertyId, updatedProperty);
     property.published = next;
     renderRpmProperties();
     renderProperties();
@@ -547,7 +636,9 @@ async function deleteProperty(propertyId) {
   if (!window.rpmDb || !propertyId || !window.confirm("¿Deseas desactivar esta propiedad del inventario?")) return;
   try {
     const property = properties.find((item) => item.id === propertyId) || {};
-    await window.rpmDb.collection("properties").doc(propertyId).set({ ...property, active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    const updatedProperty = { ...property, active: false };
+    await window.rpmDb.collection("properties").doc(propertyId).set({ ...updatedProperty, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await syncPublicProperty(propertyId, updatedProperty);
     await loadRpmProperties();
     showToast("Propiedad desactivada del inventario.");
   } catch (error) {
@@ -777,10 +868,13 @@ searchInput.addEventListener("input", renderProperties);
 typeSelect.addEventListener("change", renderProperties);
 initializeFirebaseTestConnection();
 initializeRpmAuth();
-if (!document.body.classList.contains("confi-mode")) loadDevelopments();
+if (!document.body.classList.contains("confi-mode")) {
+  loadDevelopments();
+  loadPublicProperties();
+}
 applyTheme();
 applySavedLogo();
-renderProperties();
+if (document.body.classList.contains("confi-mode")) renderProperties();
 
 
 
