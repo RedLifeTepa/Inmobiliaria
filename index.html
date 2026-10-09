@@ -6,7 +6,7 @@
     <meta name="description" content="Catálogo público de propiedades de Altos Film" />
     <title>Catálogo inmobiliario | Altos Film</title>
     <link rel="stylesheet" href="src/css/app.css?v=5.0.1" />
-  </head>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /></head>
   <body class="portal-mode">
     <div class="app-shell">
       <header class="topbar glass-panel">
@@ -74,18 +74,9 @@
                 <span class="eyebrow">UBICACIÓN</span>
                 <h3>Explora por zona</h3>
               </div>
-              <span class="map-note">Mapa demostrativo V1</span>
+              <span class="map-note">Ubicaciones de inmuebles publicados</span>
             </div>
-            <div class="map-canvas" aria-label="Mapa demostrativo con propiedades">
-              <div class="map-grid-lines"></div>
-              <div class="map-road road-a"></div><div class="map-road road-b"></div><div class="map-road road-c"></div>
-              <button class="map-pin pin-a" data-pin="Mirador del Valle">1</button>
-              <button class="map-pin pin-b" data-pin="Los Olivos">2</button>
-              <button class="map-pin pin-c" data-pin="Centro">3</button>
-              <div class="map-label label-a">Mirador del Valle</div>
-              <div class="map-label label-b">Los Olivos</div>
-              <div class="map-label label-c">Centro</div>
-            </div>
+            <div class="geo-public-map" id="publicGeoMap" aria-label="Mapa de propiedades y desarrollos"></div>
           </section>
         </section>
 
@@ -148,5 +139,5 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="config/firebase-config.js?v=6.0"></script>
     <script src="src/js/app.js?v=6.0"></script>
-  </body>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></body>
 </html>

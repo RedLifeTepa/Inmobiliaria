@@ -132,3 +132,6 @@ body:has(.modal-backdrop.open){overflow:hidden}
 @media(max-width:650px){.quick-action-grid{grid-template-columns:1fr}.quick-action-section{grid-column:1}.quick-action-modal{max-height:88vh;overflow:auto}}
 body.dark-mode .quick-action-card{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.12)}
 body.dark-mode .quick-action-card.context-action{background:rgba(34,148,197,.12);border-color:rgba(79,190,235,.42)}
+
+/* V12.0.6 */
+.geo-picker{height:230px;border-radius:16px;overflow:hidden;margin:12px 0;z-index:1}.geo-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.geo-editor{padding:14px;border:1px solid rgba(125,155,178,.35);border-radius:16px;margin:12px 0}.geo-editor p{font-size:12px}.geo-public-map{height:330px;width:100%;border-radius:16px;overflow:hidden;z-index:1}.report-export-actions{display:flex;gap:8px;flex-wrap:wrap}.geo-popup{display:flex;flex-direction:column;gap:8px;min-width:170px}@media(max-width:600px){.geo-fields{grid-template-columns:1fr}}
