@@ -152,3 +152,7 @@ V4.0: geolocalización, mapas y zonas.
 - Ubicación privada no expone zona, municipio ni coordenadas; ubicación exacta puede publicar coordenadas.
 - Se normalizan los inmuebles demostrativos al modelo operación/estado/activo/visible.
 - No requiere Firebase Storage.
+
+
+## V12.0.6.2
+Correcciones de marcador público, recuperación manual de TERRASER, eliminación segura de zonas y marcador naranja de zonas. Validar contra Firebase real antes de cerrar.
