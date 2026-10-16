@@ -156,3 +156,12 @@ V4.0: geolocalización, mapas y zonas.
 
 ## V12.0.6.2
 Correcciones de marcador público, recuperación manual de TERRASER, eliminación segura de zonas y marcador naranja de zonas. Validar contra Firebase real antes de cerrar.
+
+
+## V12.0.6.3 - Sincronización de desarrollos
+- Publicación desde `developments` a `publicDevelopments` con lista explícita de campos.
+- Portal público consulta exclusivamente `publicDevelopments`; no usa datos demo cuando Firestore responde.
+- Crear, editar, mostrar/ocultar y desactivar sincronizan el documento público.
+- Al entrar al RPM, se migran publicaciones antiguas que aún no tienen proyección pública, sin sobrescribir las existentes.
+- Publicar `firebase/firestore.rules` antes de probar. No requiere Firebase Storage.
+- Limitación: si el guardado privado tiene éxito y la sincronización pública falla, se informa el error y hay que volver a guardar.

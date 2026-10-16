@@ -316,24 +316,58 @@ function renderDevelopmentDashboard(activeDevelopments = developments.filter((de
   }));
 }
 
-async function loadDevelopments() {
- if(!window.rpmDb){renderDevelopments();return;}
- const isAdmin=document.body.classList.contains('confi-mode');
- try {
-  const ref=window.rpmDb.collection('developments');
-  const snap=await (isAdmin?ref.get():ref.where('published','==',true).get());
-  const records=snap.docs.map(d=>({id:d.id,active:d.data().active!==false,demo:false,...d.data()}));
-  const existing=records.some(d=>d.id==='terraser-demo'||d.name===demoDevelopment.name);
-  developments=isAdmin?records:(existing?records:[demoDevelopment,...records]);
-  if(isAdmin&&!existing){
-   try{
-    const {id,demo,...seed}=demoDevelopment;
-    await ref.doc('terraser-demo').set({...seed,createdAt:window.firebase.firestore.FieldValue.serverTimestamp(),updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    developments=[{...demoDevelopment,demo:false},...records];
-   }catch(seedError){console.error('TERRASER no se pudo registrar en Firestore; revisar permisos y rol',seedError);showToast('TERRASER sigue como demostración: revisa permisos de developments en Firestore.');}
+function publicDevelopmentRecord(d = {}) {
+  const allowed = ['name','type','city','location','zoneId','latitude','longitude','locationPrivacy','price','units','suites','amenitiesCount','coverUrl','description','amenities'];
+  const out = {};
+  for (const key of allowed) if (d[key] !== undefined) out[key] = d[key];
+  if (out.locationPrivacy === 'private') {
+    delete out.latitude; delete out.longitude; delete out.location; delete out.zoneId;
+  } else if (out.locationPrivacy === 'approximate') {
+    // Do not publish exact private coordinates; municipality is the safe location.
+    delete out.latitude; delete out.longitude;
+    out.location = out.city || 'Ubicación aproximada';
   }
- }catch(error){console.error('Error consultando developments',error);developments=isAdmin?[]:[demoDevelopment];if(isAdmin)showToast('No se pudieron consultar desarrollos: revisa reglas de Firebase.');}
- renderDevelopments();refreshDevelopmentSelectors();
+  return {...out, published: true, active: true};
+}
+async function syncPublicDevelopment(id, record) {
+  if (!window.rpmDb) throw new Error('Firestore no disponible');
+  const ref = window.rpmDb.collection('publicDevelopments').doc(id);
+  if (record.active === false || record.published !== true) await ref.delete();
+  else await ref.set(publicDevelopmentRecord(record));
+}
+async function loadPublicDevelopments() {
+  if (!window.rpmDb) { developments = []; renderDevelopments(); return; }
+  try {
+    const snap = await window.rpmDb.collection('publicDevelopments').get();
+    developments = snap.docs.map(d => ({...d.data(),id:d.id,demo:false}));
+  } catch (error) {
+    console.error('No se pudieron consultar los desarrollos públicos',error);
+    developments = [];
+  }
+  renderDevelopments();
+}
+async function loadDevelopments() {
+  if (!window.rpmDb) { developments = []; renderDevelopments(); return; }
+  if (!document.body.classList.contains('confi-mode')) return loadPublicDevelopments();
+  try {
+    const snap = await window.rpmDb.collection('developments').get();
+    developments = snap.docs.map(d => ({...d.data(),id:d.id,demo:false}));
+    // Legacy records are migrated only by an authorized administrator.
+    // This never overwrites a previously edited public development.
+    const publicSnap = await window.rpmDb.collection('publicDevelopments').get();
+    const publishedIds = new Set(publicSnap.docs.map(d => d.id));
+    for (const dev of developments) {
+      if (dev.active !== false && dev.published === true && !publishedIds.has(dev.id)) {
+        try { await syncPublicDevelopment(dev.id, dev); }
+        catch (e) { console.warn('No se pudo migrar la publicación del desarrollo',dev.id,e); }
+      }
+    }
+  } catch (error) {
+    console.error('Error consultando developments',error);
+    developments = [];
+    showToast('No se pudieron consultar desarrollos: revisa reglas de Firebase.');
+  }
+  renderDevelopments(); refreshDevelopmentSelectors();
 }
 
 let editingDevelopmentId = null;
@@ -369,6 +403,7 @@ async function saveDevelopment(event) {
   const data = Object.fromEntries(new FormData(form).entries());
   const record = { name: data.name.trim(), type: data.type, city: data.city.trim(), location: data.location.trim(), zoneId: data.zoneId || "", latitude: data.latitude ? Number(data.latitude) : null, longitude: data.longitude ? Number(data.longitude) : null, locationPrivacy: data.locationPrivacy || "exact", price: data.price.trim(), units: Number(data.units || 0), suites: Number(data.suites || 0), amenitiesCount: Number(data.amenitiesCount || 0), coverUrl: data.coverUrl.trim(), description: data.description.trim(), amenities: data.amenities.split(",").map((item) => item.trim()).filter(Boolean), published: form.elements.published.checked, active: true, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() };
   try {
+    let savedId = editingDevelopmentId;
     if (editingDevelopmentId) {
       const ref = window.rpmDb.collection("developments").doc(editingDevelopmentId);
       const snap = await ref.get();
@@ -376,8 +411,11 @@ async function saveDevelopment(event) {
       await ref.set(record, { merge: true });
     } else {
       record.createdAt = window.firebase.firestore.FieldValue.serverTimestamp();
-      await window.rpmDb.collection("developments").add(record);
+      const created = await window.rpmDb.collection("developments").add(record);
+      savedId = created.id;
     }
+    try { await syncPublicDevelopment(savedId, record); }
+    catch (syncError) { console.error('Development publication sync error',syncError); showToast('Desarrollo guardado, pero la publicación falló. Revisa publicDevelopments en Firestore.'); }
     closeDevelopmentModal();
     await loadDevelopments();
     showToast(editingDevelopmentId ? "Desarrollo actualizado." : "Desarrollo creado.");
@@ -407,9 +445,15 @@ async function saveDemoDevelopment(developmentId) {
 }
 
 async function toggleDevelopment(developmentId) {
-  const development = developments.find((item) => item.id === developmentId);
-  if (!development || !window.rpmDb) return;
-  try { await window.rpmDb.collection("developments").doc(developmentId).update({ published: !development.published, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await loadDevelopments(); showToast(development.published ? "Desarrollo ocultado del catálogo." : "Desarrollo publicado en el catálogo."); } catch (error) { showToast("No se pudo cambiar la publicación."); }
+  const d = developments.find(x => x.id === developmentId);
+  if (!d || !window.rpmDb) return;
+  const published = !d.published;
+  try {
+    await window.rpmDb.collection('developments').doc(developmentId).update({published,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await syncPublicDevelopment(developmentId,{...d,published});
+    await loadDevelopments();
+    showToast(published ? 'Desarrollo publicado.' : 'Desarrollo ocultado.');
+  } catch (error) { console.error('Development visibility error',error); showToast('No se pudo sincronizar la visibilidad del desarrollo.'); }
 }
 
 let pendingDevelopmentDeletionId = null;
@@ -437,7 +481,7 @@ async function confirmDeleteDevelopment() {
   const developmentId = pendingDevelopmentDeletionId;
   closeDeleteDevelopmentModal();
   if (!developmentId || !window.rpmDb) return;
-  try { await window.rpmDb.collection("developments").doc(developmentId).update({ active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await loadDevelopments(); showToast("Desarrollo desactivado. Puedes recuperarlo desde Firebase o volver a registrarlo."); } catch (error) { showToast("No se pudo desactivar el desarrollo."); console.error("Development delete error", error); }
+  try { await window.rpmDb.collection("developments").doc(developmentId).update({ active: false, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() }); await syncPublicDevelopment(developmentId,{active:false,published:false}); await loadDevelopments(); showToast("Desarrollo desactivado. Puedes recuperarlo desde Firebase o volver a registrarlo."); } catch (error) { showToast("No se pudo desactivar el desarrollo."); console.error("Development delete error", error); }
 }
 
 function deleteDevelopment(developmentId) { openDeleteDevelopmentModal(developmentId); }
@@ -859,7 +903,7 @@ typeSelect.addEventListener("change", renderProperties);
 initializeFirebaseTestConnection();
 initializeRpmAuth();
 if (!document.body.classList.contains("confi-mode")) {
-  loadDevelopments();
+  loadPublicDevelopments();
   loadPublicProperties();
 }
 applyTheme();
@@ -1192,9 +1236,9 @@ async function v1206PublicMap(){
  setTimeout(()=>map.invalidateSize(),150);
  const requests=await Promise.allSettled([
    window.rpmDb.collection('publicProperties').get(),
-   window.rpmDb.collection('developments').where('published','==',true).get()
+   window.rpmDb.collection('publicDevelopments').get()
  ]);
- requests.forEach((r,i)=>{if(r.status==='rejected')console.warn('Mapa público: no se pudo leer',i?'developments':'publicProperties',r.reason)});
+ requests.forEach((r,i)=>{if(r.status==='rejected')console.warn('Mapa público: no se pudo leer',i?'publicDevelopments':'publicProperties',r.reason)});
  const ps=requests[0].status==='fulfilled'?requests[0].value.docs:[];
  const ds=requests[1].status==='fulfilled'?requests[1].value.docs:[];
  const rows=[...ps.map(d=>({id:d.id,...d.data(),kind:'Propiedad'})).filter(d=>d.active!==false&&d.locationPrivacy!=='private'),...ds.map(d=>({id:d.id,...d.data(),kind:'Desarrollo'})).filter(d=>d.active!==false&&d.locationPrivacy!=='private')].filter(v1206Coords);
