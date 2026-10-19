@@ -43,6 +43,15 @@ service cloud.firestore {
         && request.resource.data.lastContactAt is timestamp;
     }
 
+    // Numero comercial publico: lectura sin autenticacion; escritura solo administradores.
+    match /publicSettings/{settingId} {
+      allow read: if settingId == 'communication';
+      allow create, update: if isAdmin() && settingId == 'communication'
+        && request.resource.data.whatsapp is string
+        && request.resource.data.whatsapp.matches('^[0-9]{10,15}$');
+      allow delete: if isAdmin();
+    }
+
     // Catálogo público: solo propiedades expresamente publicadas.
     match /publicProperties/{propertyId} {
       allow read: if true;

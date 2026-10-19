@@ -181,3 +181,19 @@ Se reorganizan las siete etapas del CRM en una cuadrícula de cuatro columnas (4
 
 
 V12.0.6.6: CRM con vistas En seguimiento, Finalizados y Archivados. Arrastrar tarjetas con raton, confirmacion para cerrar/perder, archivado manual, restauracion, actividad historica y persistencia en Firestore. En movil usar Editar ficha para cambiar etapa. Requiere permisos CRM existentes.
+
+## V12.0.6.8 - Entrega de prueba
+- Comprobantes de abono y estados de cuenta mediante ventana de impresion / Guardar como PDF.
+- Reporte de expediente y mensaje WhatsApp con documentos pendientes.
+- Aviso WhatsApp preparado tras registrar un abono (requiere confirmacion del usuario en WhatsApp).
+- Numero de WhatsApp publico configurable desde RPM / Configuracion, guardado en publicSettings/communication.
+- Filtros Disponibles / En proceso / Finalizados en inventario; sincronizacion de estados con operaciones por nombre unico exacto.
+- Publicacion privada segura: la sincronizacion de propiedades retira inmuebles con estados de apartado/proceso/cierre.
+
+### Limitaciones y pruebas pendientes
+- La conciliacion por nombre no opera cuando existen dos inmuebles con el mismo nombre; se requiere un propertyId estable en operaciones para la solucion definitiva.
+- El PDF usa la impresion del navegador, no genera ni almacena archivos en el servidor.
+- No se envia WhatsApp automaticamente sin confirmacion del remitente.
+- La operacion y la actualizacion del inmueble no son una unica transaccion atomica: verificar sincronizacion en pruebas.
+- Actualizar reglas de Firestore solo tras revisar los permisos existentes y validar en el simulador.
+- No se ha realizado prueba de navegador con Firebase real.
