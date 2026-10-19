@@ -178,3 +178,6 @@ Correcciones de marcador público, recuperación manual de TERRASER, eliminació
 
 ## V12.0.6.5 - CRM Kanban Responsive
 Se reorganizan las siete etapas del CRM en una cuadrícula de cuatro columnas (4+3) en escritorio, tres columnas en pantallas medianas, dos en tablet y una en móvil. No se modifican eventos, Firebase ni formularios.
+
+
+V12.0.6.6: CRM con vistas En seguimiento, Finalizados y Archivados. Arrastrar tarjetas con raton, confirmacion para cerrar/perder, archivado manual, restauracion, actividad historica y persistencia en Firestore. En movil usar Editar ficha para cambiar etapa. Requiere permisos CRM existentes.
