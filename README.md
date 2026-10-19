@@ -165,3 +165,12 @@ Correcciones de marcador público, recuperación manual de TERRASER, eliminació
 - Al entrar al RPM, se migran publicaciones antiguas que aún no tienen proyección pública, sin sobrescribir las existentes.
 - Publicar `firebase/firestore.rules` antes de probar. No requiere Firebase Storage.
 - Limitación: si el guardado privado tiene éxito y la sincronización pública falla, se informa el error y hay que volver a guardar.
+
+
+## V12.0.6.4 - Interesados
+- Se elimina la lectura anónima de publicLeads antes de crear: Firestore solo permite create al visitante.
+- Enviar interés guarda primero en Firebase y luego abre WhatsApp con datos de la propiedad.
+- El envío efectivo del WhatsApp requiere confirmación del visitante.
+- La prevención de duplicados se realizará en el RPM/backend autorizado; el formulario público no consulta datos privados.
+- No se usa Firebase Storage.
+- Revisar que firebase/firestore.rules esté publicado y que el número de WhatsApp esté configurado.

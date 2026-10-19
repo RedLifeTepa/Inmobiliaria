@@ -800,51 +800,49 @@ document.querySelector("#leadModal")?.addEventListener("click", (event) => { if 
 document.querySelector("#leadForm")?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = event.currentTarget;
-  const formData = new FormData(form);
-  const name = String(formData.get("name") || "").trim();
-  const phone = String(formData.get("phone") || "").trim();
+  const data = new FormData(form);
+  const name = String(data.get("name") || "").trim();
+  const phone = String(data.get("phone") || "").trim();
   const normalizedPhone = phone.replace(/\D/g, "");
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  const propertyId = String(formData.get("propertyId") || "").trim();
-  const propertyName = String(formData.get("propertyName") || "Consulta general").trim();
-  const preferredTime = String(formData.get("preferredTime") || "").trim();
-  const userMessage = String(formData.get("message") || "").trim();
-  const message = userMessage || `Solicito información sobre ${propertyName}${propertyId ? ` (${propertyId})` : ""}.`;
+  const email = String(data.get("email") || "").trim().toLowerCase();
+  const propertyId = String(data.get("propertyId") || "").trim();
+  const propertyName = String(data.get("propertyName") || "Consulta general").trim();
+  const preferredTime = String(data.get("preferredTime") || "").trim();
+  const message = String(data.get("message") || "").trim() || `Solicito información sobre ${propertyName}${propertyId ? ` (${propertyId})` : ""}.`;
+  if (name.length < 2 || normalizedPhone.length < 10 || !form.elements.consent.checked) {
+    showToast("Revisa el nombre, el teléfono (10 dígitos) y el consentimiento."); return;
+  }
   const submitButton = form.querySelector('button[type="submit"]');
-  if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Enviando…"; }
+  // Abrir la pestaña durante el clic evita que el navegador bloquee WhatsApp tras esperar Firebase.
+  const waTab = window.open("", "_blank");
+  if (waTab) { waTab.document.title = "Preparando solicitud"; waTab.document.body.textContent = "Guardando tu solicitud antes de abrir WhatsApp…"; }
+  if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Guardando solicitud…"; }
   try {
-    if (!window.rpmDb) throw new Error("Firebase no está disponible");
-    let duplicateId = "";
-    if (normalizedPhone.length >= 7) {
-      const dup = await window.rpmDb.collection("publicLeads").where("normalizedPhone", "==", normalizedPhone).where("propertyId", "==", propertyId).limit(1).get();
-      if (!dup.empty) duplicateId = dup.docs[0].id;
-    }
-    if (duplicateId) {
-      showToast(`Ya tenemos tu solicitud para ${propertyName}. Un asesor dará seguimiento.`);
-    } else {
-      await window.rpmDb.collection("publicLeads").add({ name, phone, normalizedPhone, email, message, propertyId, propertyName, preferredTime, consent: true, source: "portal", status: "nuevo", followUpStatus: "pendiente", repeatCount: 0, createdAt: window.firebase.firestore.FieldValue.serverTimestamp(), lastContactAt: window.firebase.firestore.FieldValue.serverTimestamp() });
-      showToast(`Interés registrado: ${propertyName}.`);
-    }
+    if (!window.rpmDb) throw new Error("unavailable: Firebase no está disponible");
+    // Un visitante anónimo NO puede consultar publicLeads. Solo se permite crear.
+    // La detección de duplicados debe hacerse desde el RPM autenticado o backend seguro.
+    await window.rpmDb.collection("publicLeads").add({
+      name, phone, normalizedPhone, email, message, propertyId, propertyName, preferredTime,
+      consent: true, source: "portal", status: "nuevo", followUpStatus: "pendiente", repeatCount: 0,
+      createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+      lastContactAt: window.firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const number = (localStorage.getItem(whatsappStorageKey) || defaultWhatsappNumber).replace(/\D/g, "");
+    const text = `Hola, buen día. Solicito información sobre la propiedad ${propertyName}${propertyId ? ` (clave ${propertyId})` : ""}.\n\nNombre: ${name}\nTeléfono: ${phone}${email ? `\nCorreo: ${email}` : ""}\nHorario preferido: ${preferredTime || "Cualquier horario"}\nMensaje: ${message}\n\nQuedo pendiente de que un asesor me contacte. Muchas gracias.`;
+    const url = `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+    showToast("Solicitud registrada en el RPM. Abriendo WhatsApp…");
     closeModal(); form.reset();
+    if (waTab) waTab.location.replace(url);
+    else { showToast("Solicitud guardada. Tu navegador bloqueó WhatsApp; habilita ventanas emergentes para este sitio."); }
   } catch (error) {
-    console.error("Lead save error", error);
-    showToast("No se pudo registrar la solicitud. Revisa la conexión con Firebase.");
+    if (waTab && !waTab.closed) waTab.close();
+    console.error("Error al registrar interesado en publicLeads:", error?.code, error);
+    const code = String(error?.code || "");
+    showToast(code.includes("permission-denied") ? "Firebase rechazó la solicitud: revisa las reglas publicLeads de Firestore." : code.includes("unavailable") ? "No hay conexión con Firebase. Intenta de nuevo." : `No se guardó la solicitud${code ? ` (${code})` : ""}. Intenta nuevamente.`);
   } finally {
     if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Enviar interés"; }
   }
 });
-
-function openLeadWhatsApp() {
-  const form = document.querySelector("#leadForm");
-  if (!form) return;
-  const propertyName = form.querySelector('[name="propertyName"]')?.value || "una propiedad";
-  const propertyId = form.querySelector('[name="propertyId"]')?.value || "";
-  const name = form.querySelector('[name="name"]')?.value.trim() || "";
-  const text = `Hola, me interesa ${propertyName}${propertyId ? ` (${propertyId})` : ""}.${name ? ` Mi nombre es ${name}.` : ""} ¿Me pueden compartir más información?`;
-  const number = (localStorage.getItem(whatsappStorageKey) || defaultWhatsappNumber).replace(/\D/g, "");
-  window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
-}
-document.querySelector("#leadWhatsApp")?.addEventListener("click", openLeadWhatsApp);
 
 async function loadPublicLeadsInbox() {
   const list = document.querySelector("#publicLeadsList");
