@@ -174,3 +174,7 @@ Correcciones de marcador público, recuperación manual de TERRASER, eliminació
 - La prevención de duplicados se realizará en el RPM/backend autorizado; el formulario público no consulta datos privados.
 - No se usa Firebase Storage.
 - Revisar que firebase/firestore.rules esté publicado y que el número de WhatsApp esté configurado.
+
+
+## V12.0.6.5 - CRM Kanban Responsive
+Se reorganizan las siete etapas del CRM en una cuadrícula de cuatro columnas (4+3) en escritorio, tres columnas en pantallas medianas, dos en tablet y una en móvil. No se modifican eventos, Firebase ni formularios.

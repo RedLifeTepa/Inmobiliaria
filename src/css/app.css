@@ -138,3 +138,20 @@ body.dark-mode .quick-action-card.context-action{background:rgba(34,148,197,.12)
 
 /* V12.0.6.4: una sola acción de captura */
 .lead-actions{grid-template-columns:minmax(0,1fr)}
+
+/* V12.0.6.5 - CRM Kanban visible in two rows without horizontal scrolling. */
+#crmKanban.crm-kanban{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:14px;
+ width:100%;min-width:0;max-width:100%;
+ overflow-x:visible;overflow-y:visible;
+ padding:4px 3px 18px;
+ align-items:stretch;
+}
+#crmKanban .crm-stage{min-width:0;min-height:190px;overflow-wrap:anywhere;}
+#crmKanban .crm-contact-card{min-width:0;overflow-wrap:anywhere;}
+#crmKanban .crm-contact-next{overflow-wrap:anywhere;}
+@media(max-width:1150px){#crmKanban.crm-kanban{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:760px){#crmKanban.crm-kanban{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:470px){#crmKanban.crm-kanban{grid-template-columns:minmax(0,1fr);}}
