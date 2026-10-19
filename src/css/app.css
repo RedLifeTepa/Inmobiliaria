@@ -158,3 +158,14 @@ body.dark-mode .quick-action-card.context-action{background:rgba(34,148,197,.12)
 
 /* CRM V12.0.6.6 - flujo mixto y arrastrar/soltar */
 .crm-view-tabs{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 14px}.crm-view-tabs button.is-selected{background:var(--primary);color:white}.crm-view-count{margin-left:7px;opacity:.8}#crmKanban .crm-stage.drag-over{outline:2px dashed var(--primary);outline-offset:-4px}#crmKanban .crm-contact-card.is-dragging{opacity:.45}#crmKanban .crm-contact-card{touch-action:pan-y}#crmKanban .crm-final-drop{min-height:125px;border:1px dashed var(--primary)}#crmKanban .crm-record-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;width:100%}#crmKanban .crm-record{background:var(--surface);box-shadow:var(--soft-shadow);border-radius:16px;padding:12px;display:grid;gap:8px}#crmKanban .crm-record .crm-contact-card{margin:0}#crmKanban .crm-record>small{color:var(--muted)}
+
+/* CRM V12.0.6.7: distinct active/finalized/archive views and draggable cards */
+#crmKanban.crm-kanban{overflow-x:hidden!important;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}
+#crmKanban .crm-stage{min-height:200px;transition:outline-color .15s,background .15s}
+#crmKanban .crm-contact-card[draggable="true"]{cursor:grab;user-select:none;-webkit-user-select:none}
+#crmKanban .crm-contact-card[draggable="true"]:active{cursor:grabbing}
+#crmKanban .crm-card-title{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+#crmKanban .crm-drag-hint{font-size:10px;color:var(--primary);font-weight:700}
+#crmKanban .crm-stage.drag-over{background:var(--surface);outline:3px dashed var(--primary)}
+@media(max-width:900px){#crmKanban.crm-kanban{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){#crmKanban.crm-kanban{grid-template-columns:1fr}}
